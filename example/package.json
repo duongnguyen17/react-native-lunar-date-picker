@@ -1,0 +1,42 @@
+{
+  "name": "@2security/lunar-date-picker-example",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "bundle-install": "cd ios && bundle install && cd ..",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "start": "react-native start",
+    "pod": "cd ios && bundle exec pod install && cd ..",
+    "pod-update": "cd ios && bundle exec pod install --repo-update && cd ..",
+    "build:android": "react-native build-android --extra-params \"--no-daemon --console=plain -PreactNativeArchitectures=arm64-v8a\"",
+    "build:ios": "react-native build-ios --mode Debug",
+    "postinstall": "node -e \"['react-native-safe-area-context','react-native-screens'].forEach(p=>{try{require('fs').rmSync(require('path').join('../node_modules',p),{recursive:true,force:true});console.log('Removed hoisted '+p+' from root node_modules')}catch(e){}})\""
+  },
+  "dependencies": {
+    "@react-navigation/native": "^7.1.34",
+    "@react-navigation/native-stack": "^7.14.6",
+    "react": "19.2.0",
+    "react-native": "0.83.2",
+    "react-native-nitro-modules": "^0.35.2",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.24.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.3",
+    "@babel/runtime": "^7.25.0",
+    "@react-native-community/cli": "20.0.0",
+    "@react-native-community/cli-platform-android": "20.0.0",
+    "@react-native-community/cli-platform-ios": "20.0.0",
+    "@react-native/babel-preset": "0.83.2",
+    "@react-native/metro-config": "0.83.2",
+    "@react-native/typescript-config": "0.83.2",
+    "@types/react": "^19.2.0",
+    "react-native-builder-bob": "^0.40.18",
+    "react-native-monorepo-config": "^0.3.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

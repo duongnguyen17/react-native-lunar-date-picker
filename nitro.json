@@ -1,0 +1,23 @@
+{
+  "cxxNamespace": ["lunardatepicker"],
+  "ios": {
+    "iosModuleName": "LunarDatePicker"
+  },
+  "android": {
+    "androidNamespace": ["lunardatepicker"],
+    "androidCxxLibName": "lunardatepicker"
+  },
+  "autolinking": {
+    "LunarDatePicker": {
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "LunarDatePicker"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "LunarDatePicker"
+      }
+    }
+  },
+  "ignorePaths": ["node_modules"]
+}
