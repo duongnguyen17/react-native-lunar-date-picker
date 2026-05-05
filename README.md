@@ -33,30 +33,6 @@ yarn add @2security/lunar-date-picker react-native-nitro-modules
 
 > **Note:** `react-native-nitro-modules` is required as this library relies on [Nitro Modules](https://nitro.margelo.com/) for native performance.
 
-## Install channels
-
-- **Stable (latest):**
-
-```bash
-npm install @2security/lunar-date-picker react-native-nitro-modules
-# or
-yarn add @2security/lunar-date-picker react-native-nitro-modules
-```
-
-- **LBA prerelease:**
-
-```bash
-npm install @2security/lunar-date-picker@lba react-native-nitro-modules
-# or
-yarn add @2security/lunar-date-picker@lba react-native-nitro-modules
-```
-
-- **Specific LBA version:**
-
-```bash
-yarn add @2security/lunar-date-picker@0.1.15-lba
-```
-
 ## 🚀 Quick Start
 
 ### 1. Configure the picker (Required)

@@ -222,24 +222,24 @@ yarn prepare
 - Check that native code is properly generated
 - Test installation in a fresh React Native project
 
-### Publishing LBA (dist-tag `lba`)
+### Publishing LBA (dist-tag `beta`)
 
 Use this flow to release a Lotus Booking App-specific prerelease without affecting `latest` (stable):
 
 ```bash
 # 1) Ensure clean git or commit changes
-git add -A && git commit -m "chore: prepare release 0.1.15-lba"
+git add -A && git commit -m "chore: prepare release 0.1.15-beta"
 
 # 2) Set version to LBA
-npm version 0.1.15-lba
-# (If you do not want auto git tag/commit: npm version 0.1.15-lba --no-git-tag-version)
+npm version 0.1.15-beta
+# (If you do not want auto git tag/commit: npm version 0.1.15-beta --no-git-tag-version)
 
 # 3) Build
 yarn nitrogen
 yarn prepare
 
-# 4) Publish under 'lba' dist-tag
-npm publish --tag lba --access public
+# 4) Publish under 'beta' dist-tag
+npm publish --tag beta --access public
 
 # 5) Push commit and tag (if created)
 git push && git push --tags
@@ -248,9 +248,9 @@ git push && git push --tags
 Install:
 
 ```bash
-yarn add @2security/lunar-date-picker@lba
+yarn add @2security/lunar-date-picker@beta
 # or
-yarn add @2security/lunar-date-picker@0.1.15-lba
+yarn add @2security/lunar-date-picker@0.1.15-beta
 ```
 
 Notes:
@@ -259,7 +259,7 @@ Notes:
 - You can manage tags if needed:
 
 ```bash
-npm dist-tag add @2security/lunar-date-picker@0.1.15-lba lba
+npm dist-tag add @2security/lunar-date-picker@0.1.15-beta beta
 npm dist-tag ls @2security/lunar-date-picker
 ```
 
@@ -278,7 +278,7 @@ npm install @2security/lunar-date-picker@beta
 
 ### Working with npm dist-tags (general)
 
-Dist-tags cho phép duy trì nhiều kênh cài đặt (ví dụ: `latest`, `beta`, `next`, `lba`).
+Dist-tags cho phép duy trì nhiều kênh cài đặt (ví dụ: `latest`, `beta`, `next`).
 
 ```bash
 # Publish một version với tag tuỳ chỉnh (không ảnh hưởng 'latest')
