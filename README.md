@@ -36,6 +36,24 @@ yarn add @2security/lunar-date-picker react-native-nitro-modules
 
 > **Note:** `react-native-nitro-modules` is required as this library relies on [Nitro Modules](https://nitro.margelo.com/) for native performance.
 
+## 📱 Expo Usage
+
+This library uses native code and **cannot** be used with Expo Go. You must use [Development Builds](https://docs.expo.dev/develop/development-builds/introduction/).
+
+### 1. Installation
+
+```sh
+npx expo install @2security/lunar-date-picker react-native-nitro-modules
+```
+
+### 2. Run with Development Build
+
+```sh
+npx expo run:ios
+# or
+npx expo run:android
+```
+
 ## 🚀 Quick Start
 
 ### 1. Configure the picker (Required)

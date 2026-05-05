@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed image visibility issues on NPM by using absolute GitHub Raw URLs for demo GIFs.
 - Included `assets` directory in the NPM package files.
 - Optimized demo video sizes in README for a more consistent and professional side-by-side layout.
+- Added Expo Usage guide to README for Development Builds.
 
 ## [1.0.0] - 2026-05-05
 
