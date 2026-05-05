@@ -169,13 +169,15 @@ class DayViewHolder(
     // Check if it's weekend (Saturday = 6, Sunday = 7)
     val isWeekend = data.date.dayOfWeek.value >= 6
     
+    val isToday = data.date == getTodayInTimezone()
+
     dayText.apply {
       // Set color based on whether it's weekend or not
       setTextColor(
         if (isWeekend) config.dayCell.weekendLabelColor 
         else config.dayCell.dateLabelColor
       )
-      typeface = Typeface.DEFAULT
+      typeface = if (isToday) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
       text = data.date.dayOfMonth.toString()
       alpha = UIConstants.Alpha.FULLY_VISIBLE
     }
@@ -222,7 +224,6 @@ class DayViewHolder(
       date == getTodayInTimezone() -> {
         dayText.apply {
           setTextColor(config.dayCell.todayLabelColor)
-          typeface = Typeface.DEFAULT_BOLD
         }
       }
     }
