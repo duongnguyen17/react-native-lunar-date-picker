@@ -201,11 +201,6 @@ final class DayCell: JTACDayCell {
   }
 
   private func updateSelectionBackgroundCornerRadius() {
-    // Ensure layout is up to date before computing corner radius
-    contentView.layoutIfNeeded()
-    dateContainerView.layoutIfNeeded()
-    selectionBackgroundView.layoutIfNeeded()
-
     let width = selectionBackgroundView.bounds.width
     let height = selectionBackgroundView.bounds.height
 

@@ -87,9 +87,6 @@ final class PickerController<Value: PickerValue>: UIViewController {
   internal let dayCellReuseIdentifier = "DayCellReuseIdentifier"
   internal let monthHeaderReuseIdentifier = "MonthHeaderReuseIdentifier"
 
-  /// Cache for lunar date calculations only (not UI state)
-  private var lunarDateCache: [String: (day: Int, month: Int)] = [:]
-
   /// Reusable calendar instance for better performance
   private var calendar: Calendar {
     return self.config.calendar
@@ -240,9 +237,6 @@ final class PickerController<Value: PickerValue>: UIViewController {
     // Break closure references
     self.doneHandler = nil
     self.cancelHandler = nil
-
-    // Clear caches to prevent memory leaks
-    lunarDateCache.removeAll()
   }
 
   // MARK: - Today Date Management
@@ -323,14 +317,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
   /// Simple cache for lunar date calculations only
   private func getCachedLunarDate(for date: Date) -> (day: Int, month: Int)? {
     let key = lunarCacheKey(for: date)
-    if let mem = lunarDateCache[key] {
-      return mem
-    }
-    if let persisted = LunarPersistentCache.shared.get(key) {
-      lunarDateCache[key] = persisted
-      return persisted
-    }
-    return nil
+    return LunarPersistentCache.shared.get(key)
   }
 
   private func setCachedLunarDate(
@@ -338,17 +325,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
     for date: Date
   ) {
     let key = lunarCacheKey(for: date)
-    lunarDateCache[key] = lunarDate
     LunarPersistentCache.shared.set(lunarDate, for: key)
-
-    // Simple size limit - remove oldest entries if cache gets too large
-    if lunarDateCache.count > 1000 {
-      let sortedKeys = lunarDateCache.keys.sorted()
-      let keysToRemove = sortedKeys.prefix(200)  // Remove oldest 200 entries
-      for key in keysToRemove {
-        lunarDateCache.removeValue(forKey: key)
-      }
-    }
   }
 
   private func lunarCacheKey(for date: Date) -> String {
