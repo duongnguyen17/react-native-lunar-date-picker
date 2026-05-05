@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Simplified `LDP_ConfigParams`, `LDP_PresentParams`, `LDP_CustomStyle`, and `LDP_CustomLanguage` to focus on core functionality.
+- Replaced `monthNames` in language config with `locale` for better internationalization support.
+- Standardized date format to `DD/MM/YYYY` across the API.
+
+### Removed
+- Removed Price Integration feature and related fields (`prices`, `priceLabelColor`, `cheapestPriceLabelColor`, `updatePrices`).
+- Removed Lazy Loading feature (`onMonthVisible`).
+- Removed custom asset support for icons (`fromImage`, `toImage`, `closeImage`).
+- Removed selection callbacks that were no longer used (`onSelectFromDate`).
+- Removed redundant UI configuration fields (`textCancel`, `cancelColor`).
+
 ## [1.0.0] - 2026-05-05
 
 ### Added
