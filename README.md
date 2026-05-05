@@ -18,6 +18,8 @@ A powerful and feature-rich React Native lunar date picker component built with 
 - ⏰ **Timezone aware** - Proper timezone support for accurate date handling across regions
 - 🚀 **Optimized rendering** - Hash-based change detection and partial updates for better performance
 
+> **Note:** This calendar is designed specifically for flight booking and scheduling use cases. As such, it is intentionally not an "infinite" calendar. It only renders a limited number of years (configurable via `yearRangeOffset`) to optimize performance and memory usage for booking scenarios.
+
 ## 📦 Installation
 
 ```sh
