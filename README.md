@@ -214,7 +214,6 @@ The picker includes several performance improvements:
 - **High-performance calendar library**: Uses [kizitonwose Calendar](https://github.com/kizitonwose/Calendar) for 60% faster scrolling
 - **Optimized RecyclerView**: Hardware-accelerated rendering with better memory management
 - **Smooth range selection**: Streamlined selection logic inspired by Example4Fragment
-- **Debounced scrolling**: 600ms debounce prevents excessive onMonthVisible calls
 
 **Cross-platform Optimizations:**
 
@@ -250,7 +249,6 @@ configure({
   // ... other config
 });
 ```
-
 
 ## 🏃‍♂️ Running the Example
 
