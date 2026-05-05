@@ -6,6 +6,12 @@
 
 A powerful and feature-rich React Native lunar date picker component built with Nitro Modules, providing native performance for both iOS and Android platforms.
 
+## 📱 Preview
+
+| iOS Preview | Android Preview |
+| :---: | :---: |
+| <img src="https://raw.githubusercontent.com/duongnguyen17/react-native-lunar-date-picker/main/assets/ios.gif" width="300" /> | <img src="https://raw.githubusercontent.com/duongnguyen17/react-native-lunar-date-picker/main/assets/android.gif" width="300" /> |
+
 ## ✨ Features
 
 - 🌙 **Lunar calendar support** - Display both solar and lunar dates with proper timezone handling
