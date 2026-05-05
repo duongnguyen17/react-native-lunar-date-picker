@@ -64,6 +64,8 @@ const pickerConfig = {
       selectedBackgroundColor: '#3B82F6',
       rangeBackgroundColor: '#EFF6FF',
       submitButtonColor: '#3B82F6',
+      noticeLabelColor: '#004085',
+      noticeBackgroundColor: '#cce5ff',
     },
   },
   yearRangeOffset: 2,
@@ -88,6 +90,13 @@ const openDatePicker = () => {
     mode: 'range', // or 'single'
     minimumDate: '01/01/2024', // Optional: minimum selectable date (DD/MM/YYYY)
     maximumDate: '31/12/2024', // Optional: maximum selectable date (DD/MM/YYYY)
+    notice: 'Lưu ý: Giá vé có thể thay đổi tùy thời điểm.', // Optional banner text
+    onMounted: (start, end) => {
+      console.log('Calendar visible range:', start, 'to', end);
+    },
+    onSelectFromDate: (start, end) => {
+      console.log('Selected from-date. New range:', start, 'to', end);
+    },
     onDone: (result) => {
       console.log('Selected range:', result);
       // result: LDP_Range = { from: "15/01/2024", to?: "20/01/2024" }
@@ -108,7 +117,29 @@ Configure the picker with themes, languages, and global settings. **Must be call
 
 Display the date picker with specified configuration.
 
+#### `updatePrices(params: LDP_PriceUpdateParams): void`
+
+Update the prices displayed on the calendar. This can be called while the picker is open to update the UI immediately (e.g., when lazy-loading prices for new months).
+
 ### Types
+
+#### `LDP_PriceUpdateParams`
+
+```typescript
+interface LDP_PriceUpdateParams {
+  prices: LDP_PriceData[]; // Array of price data objects
+}
+```
+
+#### `LDP_PriceData`
+
+```typescript
+interface LDP_PriceData {
+  date: string; // Date in DD/MM/YYYY format
+  price: number; // Price value (in thousands, e.g., 1500 for 1.5M)
+  isCheapest?: boolean; // Highlight as cheapest price
+}
+```
 
 #### `LDP_PresentParams`
 
@@ -122,6 +153,9 @@ interface LDP_PresentParams {
   minimumDate?: string; // Minimum selectable date (DD/MM/YYYY)
   maximumDate?: string; // Maximum selectable date (DD/MM/YYYY)
   initialValue?: LDP_Range; // Initial selected range
+  notice?: string; // Optional notice text to display below navigation bar
+  onMounted?: (startDate: string, endDate: string) => void; // Calendar mounted callback
+  onSelectFromDate?: (startDate: string, endDate: string) => void; // User selected from-date callback
 }
 ```
 
@@ -164,6 +198,8 @@ interface LDP_CustomStyle {
   selectedBackgroundColor: string; // Selected background color (hex)
   rangeBackgroundColor: string; // Range background color (hex)
   submitButtonColor: string; // Submit button color (hex)
+  noticeLabelColor: string; // Notice banner text color (hex)
+  noticeBackgroundColor: string; // Notice banner background color (hex)
 }
 ```
 
@@ -205,7 +241,41 @@ pickDate({
 });
 ```
 
-### Performance Optimizations
+### Lazy Loading Prices
+ 
+ You can use `onMounted` and `onSelectFromDate` to implement efficient lazy loading for pricing data. Since the calendar only displays a specific range of years, these callbacks provide the full visible range once the picker is opened or when the user starts selecting a range.
+ 
+ ```javascript
+ import { pickDate, updatePrices } from '@2security/lunar-date-picker';
+ 
+ const openLazyLoadingPicker = () => {
+   pickDate({
+     theme: 'light',
+     language: 'vi',
+     title: 'Chọn ngày',
+     mode: 'range',
+     onMounted: (startDate, endDate) => {
+       // Called when calendar is first opened
+       // Fetch prices for the entire visible range: startDate to endDate
+       fetchPrices(startDate, endDate).then(prices => {
+         updatePrices({ prices });
+       });
+     },
+     onSelectFromDate: (startDate, endDate) => {
+       // Called when user selects a 'from' date
+       // You can use this to refresh prices for the remaining range if needed
+       fetchPrices(startDate, endDate).then(prices => {
+         updatePrices({ prices });
+       });
+     },
+     onDone: (result) => {
+       console.log('Final selection:', result);
+     },
+   });
+ };
+ ```
+ 
+ ### Performance Optimizations
 
 The picker includes several performance improvements:
 

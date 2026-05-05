@@ -41,6 +41,18 @@ final class DayCell: JTACDayCell {
     return label
   }()
 
+  lazy var priceLabel: UILabel = {
+    let label = UILabel()
+    label.textAlignment = .center
+    label.translatesAutoresizingMaskIntoConstraints = false
+    label.font = UIFont.systemFont(
+      ofSize: Constants.FontSize.priceLabel,
+      weight: .regular
+    )
+    label.isHidden = true
+    return label
+  }()
+
 
   lazy var selectionBackgroundView: UIView = {
     let view = UIView()
@@ -128,6 +140,7 @@ final class DayCell: JTACDayCell {
     dateContainerView.addSubview(selectionBackgroundView)
     dateContainerView.addSubview(dateLabel)
     dateContainerView.addSubview(lunarDateLabel)
+    dateContainerView.addSubview(priceLabel)
     
   }
 
@@ -151,7 +164,13 @@ final class DayCell: JTACDayCell {
         equalTo: dateLabel.bottomAnchor,
         constant: Constants.Layout.lunarDateLabelTopSpacing
       ),
-      lunarDateLabel.bottomAnchor.constraint(equalTo: dateContainerView.bottomAnchor)
+
+      priceLabel.centerXAnchor.constraint(equalTo: dateContainerView.centerXAnchor),
+      priceLabel.topAnchor.constraint(
+        equalTo: lunarDateLabel.bottomAnchor,
+        constant: Constants.Layout.priceLabelTopSpacing
+      ),
+      priceLabel.bottomAnchor.constraint(equalTo: dateContainerView.bottomAnchor)
     ])
   }
 
@@ -201,27 +220,14 @@ final class DayCell: JTACDayCell {
   }
 
   private func updateSelectionBackgroundCornerRadius() {
-    let width = selectionBackgroundView.bounds.width
-    let height = selectionBackgroundView.bounds.height
-
-    if width > 0 && height > 0 {
-      selectionBackgroundView.layer.cornerRadius = min(width, height) / 2
-    } else {
-      // Defer to next runloop when bounds are set
-      DispatchQueue.main.async { [weak self] in
-        guard let self = self else { return }
-        let w = self.selectionBackgroundView.bounds.width
-        let h = self.selectionBackgroundView.bounds.height
-        if w > 0 && h > 0 {
-          self.selectionBackgroundView.layer.cornerRadius = min(w, h) / 2
-        }
-      }
-    }
+    selectionBackgroundView.layer.cornerRadius = Scale.value(12)
   }
 
   private func resetCell() {
     dateLabel.isHidden = false
     lunarDateLabel.isHidden = false
+    priceLabel.isHidden = true
+    priceLabel.text = nil
     
     selectionBackgroundView.isHidden = true
     leftRangeView.isHidden = true
@@ -233,6 +239,7 @@ final class DayCell: JTACDayCell {
     // Reset alpha values
     dateLabel.alpha = 1.0
     lunarDateLabel.alpha = 1.0
+    priceLabel.alpha = 1.0
   }
 
   private func configureVisibility(_ config: ViewConfig) {
@@ -269,6 +276,7 @@ final class DayCell: JTACDayCell {
       let alpha: CGFloat = config.isDateEnabled ? 1.0 : 0.4
       dateLabel.alpha = alpha
       lunarDateLabel.alpha = alpha
+      priceLabel.alpha = alpha
       
       // Override colors for selected state
       if !config.isSelectedViewHidden {
@@ -276,6 +284,25 @@ final class DayCell: JTACDayCell {
         dateLabel.textColor = selectedColor
         lunarDateLabel.textColor = selectedColor
       }
+    }
+
+    // Configure price label
+    if let priceText = config.priceText {
+      priceLabel.isHidden = false
+      priceLabel.text = priceText
+      priceLabel.textColor = config.isCheapest
+        ? self.config.dayCell.cheapestPriceLabelColor.toUIColor()
+        : self.config.dayCell.priceLabelColor.toUIColor()
+      // Override for selected state
+      if !config.isSelectedViewHidden {
+        priceLabel.textColor = self.config.dayCell.selectedTextColor.toUIColor()
+      }
+    } else if config.showPriceArea {
+      // prices truyền vào nhưng ngày này không có data -> hiển thị trống
+      priceLabel.isHidden = false
+      priceLabel.text = ""
+    } else {
+      priceLabel.isHidden = true
     }
   }
 
@@ -466,6 +493,12 @@ extension DayCell {
     var dateLabelColor: ColorWrapper = ColorWrapper.label
     var lunarDateLabelColor: ColorWrapper = ColorWrapper.label
     var dateLabelFontWeight: UIFont.Weight = .regular
+    /// Giá hiển thị dạng "1.000K", nil = không có data
+    var priceText: String?
+    /// true = ngày giá rẻ nhất
+    var isCheapest: Bool = false
+    /// true = prices được truyền vào (kể cả array rỗng) → cần dành chỗ cho price area
+    var showPriceArea: Bool = false
   }
 }
 
@@ -478,6 +511,8 @@ extension PickerConfig {
     public var weekendLabelColor: ColorWrapper = ColorWrapper.customBlack
     public var lunarDateLabelColor: ColorWrapper = ColorWrapper.darkLunarDateColor
     public var specialDateLabelColor: ColorWrapper = ColorWrapper.darkLunarDateColor
+    public var priceLabelColor: ColorWrapper = ColorWrapper.darkLunarDateColor
+    public var cheapestPriceLabelColor: ColorWrapper = ColorWrapper.systemBlue
     public var rangeBackgroundColor: ColorWrapper = ColorWrapper.customBlack
     public var selectedBackgroundColor: ColorWrapper = ColorWrapper.systemBlue
     public var selectedTextColor: ColorWrapper = ColorWrapper.customWhite

@@ -32,7 +32,9 @@ data class ControllerConfig(
   var secondaryTextColor: Int = Color.BLACK,
   var selectedTextColor: Int = Color.WHITE,
   var submitButtonColor: Int = Color.BLACK,
-  var showSubmitButton: Boolean = true
+  var showSubmitButton: Boolean = true,
+  var noticeLabelColor: Int = Color.BLACK,
+  var noticeBackgroundColor: Int = Color.LTGRAY
 ) : Serializable
 
 /**
@@ -44,6 +46,8 @@ data class DayCellConfig(
   var weekendLabelColor: Int = "#FF9500".toColorInt(), // Orange like iOS
   var lunarDateLabelColor: Int = "#8E8E93".toColorInt(), // iOS secondary label color
   var specialDateLabelColor: Int = "#FF9500".toColorInt(), // Orange for special dates (like first day of lunar month)
+  var priceLabelColor: Int = "#8E8E93".toColorInt(), // Default: same as lunar date
+  var cheapestPriceLabelColor: Int = "#3B82F6".toColorInt(), // Blue for cheapest price
   
   var rangeBackgroundColor: Int = "#E5F3FF".toColorInt(), // Light blue for range
   var selectedBackgroundColor: Int = "#007AFF".toColorInt(), // iOS blue

@@ -84,7 +84,7 @@ final class PickerPresenter {
 
     guard let fromDate = dateConverter.dateFromString(initialValue.from, timeZone: timeZone) else { return }
 
-    let isSingle = (params.mode == LDP_Mode.single)
+    let isSingle = (params.mode == .single)
     if isSingle {
       // Single mode: set only from, leave to nil
       controller.initialValue = PickerRange(from: fromDate, to: nil)

@@ -12,6 +12,7 @@ object DataConstants {
         const val ARG_MIN_DATE = "min_date"
         const val ARG_MAX_DATE = "max_date"
         const val ARG_INITIAL_VALUE = "initial_value"
+        const val ARG_NOTICE = "notice"
     }
     
     // Format strings

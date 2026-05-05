@@ -6,6 +6,8 @@ import com.facebook.react.bridge.UiThreadUtil
 import com.margelo.nitro.NitroModules
 import com.margelo.nitro.lunardatepicker.LDP_ConfigParams
 import com.margelo.nitro.lunardatepicker.LDP_PresentParams
+import com.margelo.nitro.lunardatepicker.LDP_PriceData
+import com.margelo.nitro.lunardatepicker.LDP_PriceUpdateParams
 import com.margelo.nitro.lunardatepicker.constants.DataConstants
 import com.margelo.nitro.lunardatepicker.exceptions.LunarDatePickerException
 import com.margelo.nitro.lunardatepicker.models.PickerConfig
@@ -47,6 +49,18 @@ class LunarDatePickerCoordinator(
     }
   }
 
+  /**
+   * Cập nhật giá theo tháng — merge vào fragment đang hiển thị nếu có
+   */
+  fun updatePrices(params: LDP_PriceUpdateParams) {
+    val fragment = currentFragment ?: return
+    // Convert LDP_PriceData list to map keyed by date (DD/MM/YYYY)
+    val newMap: Map<String, LDP_PriceData> = params.prices.associateBy { it.date }
+    UiThreadUtil.runOnUiThread {
+      fragment.updatePrices(newMap)
+    }
+  }
+
   suspend fun present(params: LDP_PresentParams) {
     try {
       val activity = getCurrentActivity()
@@ -85,11 +99,19 @@ class LunarDatePickerCoordinator(
   ) {
     try {
       val timeZone = getConfiguredTimeZone()
+
+      // Build initial price map if prices are provided
+      val priceMap: Map<String, LDP_PriceData>? = params.prices?.associateBy { it.date }
+
       val pickerFragment = LunarDatePickerFragment.newInstance(
         config = config,
         minimumDate = params.minimumDate?.let { dateConverter.dateFromString(it, timeZone) },
         maximumDate = params.maximumDate?.let { dateConverter.dateFromString(it, timeZone) },
         initialValue = params.initialValue,
+        prices = priceMap,
+        notice = params.notice,
+        onMounted = params.onMounted,
+        onSelectFromDate = params.onSelectFromDate,
         onResult = { result ->
           currentFragment = null
           params.onDone(result)

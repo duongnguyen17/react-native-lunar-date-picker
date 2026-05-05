@@ -27,6 +27,10 @@ export const PICKER_CONFIG: LDP_ConfigParams = {
       secondColor: '#FBAF1A',
       todayLabelColor: '#33cc33',
       submitButtonColor: '#007AFF',
+      priceLabelColor: '#6B7280',
+      cheapestPriceLabelColor: '#16a34a',
+      noticeLabelColor: '#004085',
+      noticeBackgroundColor: '#cce5ff',
     },
     dark: {
       backgroundColor: '#000000',
@@ -43,6 +47,10 @@ export const PICKER_CONFIG: LDP_ConfigParams = {
       secondColor: '#FBAF1A',
       todayLabelColor: '#33cc33',
       submitButtonColor: '#007AFF',
+      priceLabelColor: '#9CA3AF',
+      cheapestPriceLabelColor: '#4ade80',
+      noticeLabelColor: '#cce5ff',
+      noticeBackgroundColor: '#004085',
     },
   },
   yearRangeOffset: 2,
@@ -51,8 +59,10 @@ export const PICKER_CONFIG: LDP_ConfigParams = {
 };
 
 export const MOCK_API_CONFIG = {
-  MIN_DELAY: 1000,
-  MAX_DELAY: 3000,
+  MIN_DELAY: 800,
+  MAX_DELAY: 2000,
+  MIN_PRICES_PER_MONTH: 15,
+  MAX_PRICES_PER_MONTH: 25,
 } as const;
 
 export const UPDATE_INTERVAL = 3000;

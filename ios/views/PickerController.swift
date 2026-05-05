@@ -78,6 +78,23 @@ final class PickerController<Value: PickerValue>: UIViewController {
     return view
   }()
 
+  /// Notice Banner (Optional)
+  private lazy var noticeContainer: UIView = {
+    let view = UIView()
+    view.translatesAutoresizingMaskIntoConstraints = false
+    view.backgroundColor = self.config.controller.noticeBackgroundColor.toUIColor()
+    return view
+  }()
+
+  private lazy var noticeLabel: UILabel = {
+    let label = UILabel()
+    label.translatesAutoresizingMaskIntoConstraints = false
+    label.textColor = self.config.controller.noticeLabelColor.toUIColor()
+    label.font = UIFont.systemFont(ofSize: Scale.value(12))
+    label.numberOfLines = 0
+    return label
+  }()
+
   // MARK: - Properties
 
   /// Configuration for the picker
@@ -127,6 +144,41 @@ final class PickerController<Value: PickerValue>: UIViewController {
 
   /// Currently selected value
   private var value: Value?
+
+  /// Price data: key = "DD/MM/YYYY"
+  internal var priceMap: [String: LDP_PriceData] = [:]
+
+  /// Whether prices were passed in (even if empty) — controls priceLabel visibility
+  internal var hasPrices: Bool = false
+
+  /// Callback khi calendar fully mounted
+  public var onMounted: ((String, String) -> Void)?
+
+  /// Callback khi user chọn from date (range mode)
+  /// - startDate: ngày vừa chọn (DD/MM/YYYY)
+  /// Callback khi user chọn from date (range mode)
+  public var onSelectFromDate: ((String, String) -> Void)?
+
+  /// Optional notice text to display below navigation bar
+  public var noticeText: String?
+
+  /// Date formatter dùng cho price key (DD/MM/YYYY)
+  private lazy var priceDateFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "dd/MM/yyyy"
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.timeZone = self.config.calendar.timeZone
+    return f
+  }()
+
+  /// Date formatter dùng cho onMounted / onSelectFromDate (DD/MM/YYYY)
+  private lazy var resultDateFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "dd/MM/yyyy"
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.timeZone = self.config.calendar.timeZone
+    return f
+  }()
 
   /// The block to execute after "Done" button will be tapped
   public var doneHandler: ((Value?) -> Void)?
@@ -184,6 +236,12 @@ final class PickerController<Value: PickerValue>: UIViewController {
     self.prewarmLunarCache(monthsBefore: 0, monthsAfter: 2)
   }
 
+  override public func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    // Fire onMounted after calendar is fully visible & stable
+    fireOnMounted()
+  }
+
   deinit {
     cleanup()
     cleanupTodayTimer()
@@ -233,10 +291,11 @@ final class PickerController<Value: PickerValue>: UIViewController {
     self.calendarView.ibCalendarDelegate = nil
     self.calendarView.ibCalendarDataSource = nil
 
-
     // Break closure references
     self.doneHandler = nil
     self.cancelHandler = nil
+    self.onMounted = nil
+    self.onSelectFromDate = nil
   }
 
   // MARK: - Today Date Management
@@ -359,15 +418,39 @@ final class PickerController<Value: PickerValue>: UIViewController {
       withReuseIdentifier: self.monthHeaderReuseIdentifier
     )
 
+    if let notice = noticeText, !notice.isEmpty {
+      self.noticeLabel.text = notice
+      self.noticeContainer.addSubview(self.noticeLabel)
+      self.view.addSubview(self.noticeContainer)
+    }
+
     self.view.addSubview(self.weekView)
     self.view.addSubview(self.calendarView)
   }
 
   private func configureConstraints() {
-    NSLayoutConstraint.activate([
-      self.weekView.topAnchor.constraint(
-        equalTo: self.view.safeAreaLayoutGuide.topAnchor
-      ),
+    var constraints: [NSLayoutConstraint] = []
+
+    if let notice = noticeText, !notice.isEmpty {
+      constraints.append(contentsOf: [
+        self.noticeContainer.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor),
+        self.noticeContainer.leadingAnchor.constraint(equalTo: self.view.leadingAnchor),
+        self.noticeContainer.trailingAnchor.constraint(equalTo: self.view.trailingAnchor),
+        
+        self.noticeLabel.topAnchor.constraint(equalTo: self.noticeContainer.topAnchor, constant: Scale.value(8)),
+        self.noticeLabel.bottomAnchor.constraint(equalTo: self.noticeContainer.bottomAnchor, constant: -Scale.value(8)),
+        self.noticeLabel.leadingAnchor.constraint(equalTo: self.noticeContainer.leadingAnchor, constant: Scale.value(16)),
+        self.noticeLabel.trailingAnchor.constraint(equalTo: self.noticeContainer.trailingAnchor, constant: -Scale.value(16)),
+        
+        self.weekView.topAnchor.constraint(equalTo: self.noticeContainer.bottomAnchor)
+      ])
+    } else {
+      constraints.append(
+        self.weekView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor)
+      )
+    }
+
+    constraints.append(contentsOf: [
       self.weekView.leftAnchor.constraint(
         equalTo: self.view.leftAnchor,
         constant: Constants.Layout.weekViewSidePadding
@@ -392,6 +475,8 @@ final class PickerController<Value: PickerValue>: UIViewController {
         equalTo: self.view.bottomAnchor
       ),
     ])
+    
+    NSLayoutConstraint.activate(constraints)
   }
 
   private func setupCalendarContentInsets() {
@@ -471,6 +556,15 @@ final class PickerController<Value: PickerValue>: UIViewController {
       // Configure lunar date
       configureLunarDate(for: &config, date: date)
 
+      // Configure price
+      if hasPrices {
+        config.showPriceArea = true
+        let key = priceDateFormatter.string(from: date)
+        if let priceData = priceMap[key] {
+          config.priceText = formatPrice(priceData.price)
+          config.isCheapest = priceData.isCheapest ?? false
+        }
+      }
     }
 
     return config
@@ -605,6 +699,8 @@ final class PickerController<Value: PickerValue>: UIViewController {
             self?.selectValue(newRange.range as? Value, in: calendar)
           }
         }
+        // Fire callback với from date vừa chọn
+        fireOnSelectFromDate(selectedDate: newRange.range.fromDate)
       } else {
         // Normal case - update value immediately
         self.value = newRange.range as? Value
@@ -709,6 +805,69 @@ final class PickerController<Value: PickerValue>: UIViewController {
     self.confirmBarButtonItem.isEnabled = enabled
   }
 
+  // MARK: - Price Helpers
+
+  /// Cập nhật price map với dữ liệu mới cho 1 tháng, reload lại calendar
+  internal func updatePrices(_ newPrices: [LDP_PriceData]) {
+    for price in newPrices {
+      priceMap[price.date] = price
+    }
+    DispatchQueue.main.async { [weak self] in
+      self?.calendarView.reloadData()
+    }
+  }
+
+  private func formatPrice(_ price: Double) -> String {
+    let thousands = NSNumber(value: Int(round(price / 1000.0)))
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    formatter.groupingSeparator = "."
+    formatter.usesGroupingSeparator = true
+    if let formatted = formatter.string(from: thousands) {
+      return "\(formatted)K"
+    }
+    return "\(thousands)K"
+  }
+
+
+  /// Fire onSelectFromDate với startDate = ngày user chọn, endDate = calendar end
+  private func fireOnSelectFromDate(selectedDate: Date) {
+    guard let onSelectFromDate = self.onSelectFromDate else { return }
+
+    let startStr = resultDateFormatter.string(from: selectedDate)
+    let endDate = self.privateMaximumDate
+      ?? self.config.calendar.date(byAdding: .year, value: self.config.yearRangeOffset, to: Date())
+      ?? Date()
+    let endStr = resultDateFormatter.string(from: endDate)
+
+    DispatchQueue.main.async {
+      onSelectFromDate(startStr, endStr)
+    }
+  }
+
+  /// Fire onMounted callback sau khi calendar fully appeared
+  private func fireOnMounted() {
+    guard let onMounted = self.onMounted else { return }
+
+    let timeZone = self.config.calendar.timeZone
+    let formatter = resultDateFormatter
+
+    let startDate = self.privateMinimumDate
+      ?? self.config.calendar.date(byAdding: .year, value: -self.config.yearRangeOffset, to: Date())
+      ?? Date()
+    let endDate = self.privateMaximumDate
+      ?? self.config.calendar.date(byAdding: .year, value: self.config.yearRangeOffset, to: Date())
+      ?? Date()
+
+    _ = timeZone // used by formatter
+    let startStr = formatter.string(from: startDate)
+    let endStr = formatter.string(from: endDate)
+
+    DispatchQueue.main.async {
+      onMounted(startStr, endStr)
+    }
+  }
+
   override public func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
 
@@ -789,6 +948,8 @@ extension PickerConfig {
     public var isSingleMode: Bool = false
     public var showSubmitButton: Bool = true
     public var submitButtonColor = ColorWrapper.customBlack
+    public var noticeLabelColor = ColorWrapper.customBlack
+    public var noticeBackgroundColor = ColorWrapper(fromHex: "#D3D3D3") // Default LTGRAY
   }
 }
 

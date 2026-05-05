@@ -12,6 +12,7 @@ import android.widget.TextView
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.view.ViewContainer
+import com.margelo.nitro.lunardatepicker.LDP_PriceData
 import com.margelo.nitro.lunardatepicker.constants.DataConstants
 import com.margelo.nitro.lunardatepicker.constants.LayoutConstants
 import com.margelo.nitro.lunardatepicker.constants.UIConstants
@@ -21,6 +22,7 @@ import com.margelo.nitro.lunardatepicker.utils.ContinuousSelectionHelper.isOutDa
 import com.margelo.nitro.lunardatepicker.utils.DateConverter
 import com.margelo.nitro.lunardatepicker.utils.DimensionUtils.dpToPx
 import com.margelo.nitro.lunardatepicker.utils.ObjectPoolManager
+import com.margelo.nitro.lunardatepicker.utils.ScaleUtils
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -30,11 +32,17 @@ class DayViewHolder(
   private val dateConverter: DateConverter,
   private val timeZone: ZoneId,
   private val isDateEnabled: (LocalDate) -> Boolean,
-  private val onDateClick: (LocalDate) -> Unit
+  private val onDateClick: (LocalDate) -> Unit,
+  /**
+   * Map giá: key = "DD/MM/YYYY", value = LDP_PriceData
+   * null = prices không được truyền vào → ẩn price area
+   */
+  private var priceMap: Map<String, LDP_PriceData>? = null
 ) : ViewContainer(view) {
 
   private lateinit var dayText: TextView
   private lateinit var lunarText: TextView
+  private lateinit var priceText: TextView
   private lateinit var rootFrame: FrameLayout
   private lateinit var leftRangeView: View
   private lateinit var rightRangeView: View
@@ -57,6 +65,13 @@ class DayViewHolder(
     return LocalDate.now(timeZone)
   }
 
+  /**
+   * Cập nhật price map và rebind view nếu cần
+   */
+  fun updatePriceMap(newPriceMap: Map<String, LDP_PriceData>?) {
+    this.priceMap = newPriceMap
+  }
+
   private fun setupViews() {
     val context = view.context
 
@@ -77,7 +92,7 @@ class DayViewHolder(
       )
       layoutParams = FrameLayout.LayoutParams(
         FrameLayout.LayoutParams.MATCH_PARENT,
-        UIConstants.DayCell.SELECTED_CIRCLE_SIZE
+        FrameLayout.LayoutParams.MATCH_PARENT
       )
     }
 
@@ -119,17 +134,30 @@ class DayViewHolder(
       textSize = LayoutConstants.TextSize.LUNAR_TEXT
     }
 
+    priceText = TextView(context).apply {
+      gravity = Gravity.CENTER
+      textSize = LayoutConstants.TextSize.PRICE_TEXT
+      visibility = View.GONE
+    }
+
     selectionContainer = LinearLayout(context).apply {
       orientation = LinearLayout.VERTICAL
       gravity = Gravity.CENTER
+      setPadding(
+        dpToPx(ScaleUtils.scaleDp(2)),
+        dpToPx(ScaleUtils.scaleDp(4)),
+        dpToPx(ScaleUtils.scaleDp(2)),
+        dpToPx(ScaleUtils.scaleDp(4))
+      )
       layoutParams = LinearLayout.LayoutParams(
         UIConstants.DayCell.SELECTED_CIRCLE_SIZE,
-        UIConstants.DayCell.SELECTED_CIRCLE_SIZE
+        ViewGroup.LayoutParams.WRAP_CONTENT
       )
     }
 
     selectionContainer.addView(dayText)
     selectionContainer.addView(lunarText)
+    selectionContainer.addView(priceText)
 
     cellVertical.addView(selectionContainer)
 
@@ -163,6 +191,8 @@ class DayViewHolder(
     selectionContainer.background = null
     rightRangeView.setBackgroundColor(UIConstants.Colors.TRANSPARENT)
     leftRangeView.setBackgroundColor(UIConstants.Colors.TRANSPARENT)
+    priceText.visibility = View.GONE
+    priceText.text = ""
   }
 
   private fun bindMonthDate(data: CalendarDay) {
@@ -188,6 +218,9 @@ class DayViewHolder(
       setTextColor(lunarInfo.color)
     }
 
+    // Configure price label
+    configurePriceLabel(data.date)
+
     if (!isDateEnabled(data.date)) {
       dayText.alpha = UIConstants.Alpha.DISABLED_DATE
     } else {
@@ -195,18 +228,57 @@ class DayViewHolder(
     }
   }
 
+  private fun configurePriceLabel(date: LocalDate) {
+    val map = priceMap
+    if (map == null) {
+      // prices không được truyền vào → ẩn hoàn toàn
+      priceText.visibility = View.GONE
+      return
+    }
+
+    // prices được truyền vào (kể cả rỗng) → luôn dành chỗ
+    priceText.visibility = View.VISIBLE
+
+    val key = dateConverter.stringFromDate(date, timeZone) // DD/MM/YYYY
+    val priceData = map[key]
+    if (priceData != null) {
+      priceText.text = formatPrice(priceData.price)
+      priceText.setTextColor(
+        if (priceData.isCheapest == true) config.dayCell.cheapestPriceLabelColor
+        else config.dayCell.priceLabelColor
+      )
+    } else {
+      priceText.text = ""
+    }
+  }
+
+  /**
+   * Format giá sang dạng "1.000K", "2.897K"
+   * 1000000 / 1000 = 1000.000 → "1000.000K" — cần làm tròn tới phần nghìn thứ 3
+   * Ví dụ: 1000000 → 1.000K, 2897000 → 2.897K
+   */
+  @SuppressLint("DefaultLocale")
+  private fun formatPrice(price: Double): String {
+    val thousands = (price / 1000.0).toLong()
+    val format = java.text.DecimalFormat("#,###")
+    val dfs = java.text.DecimalFormatSymbols()
+    dfs.groupingSeparator = '.'
+    format.decimalFormatSymbols = dfs
+    return "${format.format(thousands)}K"
+  }
+
   private fun applyDateSelection(date: LocalDate) {
     when {
       (date == selectedFromDate && date == selectedToDate) -> {
-        applySelectedCircle()
+        applySelectedBackground()
       }
 
       selectedFromDate == date && selectedToDate == null -> {
-        applySelectedCircle()
+        applySelectedBackground()
       }
 
       date == selectedFromDate -> {
-        applySelectedCircle()
+        applySelectedBackground()
         rightRangeView.setBackgroundColor(config.dayCell.rangeBackgroundColor)
       }
 
@@ -217,7 +289,7 @@ class DayViewHolder(
       }
 
       date == selectedToDate -> {
-        applySelectedCircle()
+        applySelectedBackground()
         leftRangeView.setBackgroundColor(config.dayCell.rangeBackgroundColor)
       }
 
@@ -232,6 +304,7 @@ class DayViewHolder(
   private fun bindInDateAndOutDate(data: CalendarDay) {
     dayText.text = ""
     lunarText.text = ""
+    priceText.visibility = View.GONE
     selectionContainer.background = null
 
     if (selectedFromDate != null && selectedToDate != null) {
@@ -259,17 +332,19 @@ class DayViewHolder(
     bindInDateAndOutDate(data)
   }
 
-  private fun applySelectedCircle() {
-    val circle = ObjectPoolManager.gradientDrawablePool.acquire().apply {
-      shape = GradientDrawable.OVAL
+  private fun applySelectedBackground() {
+    val bg = ObjectPoolManager.gradientDrawablePool.acquire().apply {
+      shape = GradientDrawable.RECTANGLE
+      cornerRadius = ScaleUtils.scale(12f)
       setColor(config.calendar.selectedBackgroundColor)
     }
     
-    currentDrawable = circle
+    currentDrawable = bg
     
-    selectionContainer.background = circle
+    selectionContainer.background = bg
     dayText.setTextColor(config.calendar.selectedTextColor)
     lunarText.setTextColor(config.calendar.selectedTextColor)
+    priceText.setTextColor(config.calendar.selectedTextColor)
   }
 
   private fun setupClickListener(data: CalendarDay) {

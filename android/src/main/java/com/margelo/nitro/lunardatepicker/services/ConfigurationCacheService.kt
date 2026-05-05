@@ -86,7 +86,9 @@ class ConfigurationCacheService {
         backgroundColor = template.backgroundColor,
         titleColor = template.titleColor,
         secondaryTextColor = template.secondColor,
-        submitButtonColor = template.submitButtonColor
+        submitButtonColor = template.submitButtonColor,
+        noticeLabelColor = template.noticeLabelColor,
+        noticeBackgroundColor = template.noticeBackgroundColor
       ),
       dayCell = config.dayCell.copy(
         dateLabelColor = template.dateLabelColor,
@@ -146,6 +148,8 @@ class ConfigurationCacheService {
     val localeTag = language?.locale ?: Locale.getDefault().toLanguageTag()
     val secondColor = if (theme != null) parseColor(theme.secondColor) else android.graphics.Color.WHITE
     val submitButtonColor = if (theme != null) parseColor(theme.submitButtonColor) else android.graphics.Color.BLACK
+    val noticeLabelColor = if (theme != null) parseColor(theme.noticeLabelColor) else android.graphics.Color.BLACK
+    val noticeBackgroundColor = if (theme != null) parseColor(theme.noticeBackgroundColor) else parseColor("#D3D3D3")
 
     return ConfigurationTemplate(
       backgroundColor = backgroundColor,
@@ -164,7 +168,9 @@ class ConfigurationCacheService {
       weekdayNames = weekdayNames,
       localeTag = localeTag,
       secondColor = secondColor,
-      submitButtonColor = submitButtonColor
+      submitButtonColor = submitButtonColor,
+      noticeLabelColor = noticeLabelColor,
+      noticeBackgroundColor = noticeBackgroundColor
     )
   }
 
@@ -217,6 +223,8 @@ class ConfigurationCacheService {
       keyBuilder.append(t.weekViewBackgroundColor).append(",")
       keyBuilder.append(t.selectedBackgroundColor).append(",")
       keyBuilder.append(t.rangeBackgroundColor).append(",")
+      keyBuilder.append(t.noticeLabelColor).append(",")
+      keyBuilder.append(t.noticeBackgroundColor).append(",")
       keyBuilder.append(t.submitButtonColor).append("|")
     }
     language?.let { l ->
@@ -248,7 +256,9 @@ class ConfigurationCacheService {
     val weekdayNames: Array<String>,
     val localeTag: String,
     val secondColor: Int,
-    val submitButtonColor: Int
+    val submitButtonColor: Int,
+    val noticeLabelColor: Int,
+    val noticeBackgroundColor: Int
   )
 
   sealed class ValidationResult {

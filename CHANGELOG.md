@@ -9,15 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Simplified `LDP_ConfigParams`, `LDP_PresentParams`, `LDP_CustomStyle`, and `LDP_CustomLanguage` to focus on core functionality.
-- Replaced `monthNames` in language config with `locale` for better internationalization support.
-- Standardized date format to `DD/MM/YYYY` across the API.
+- Added `notice` banner support below the navigation bar for both iOS and Android.
+- Added `noticeLabelColor` and `noticeBackgroundColor` to `LDP_CustomStyle` for banner customization.
+- Updated `onMounted` and `onSelectFromDate` callbacks to provide the full visible/selectable date range (`startDate`, `endDate`).
+- Improved selected day highlight UI on Android using rounded rectangles with better padding.
+- Optimized performance by removing redundant scroll listeners and month visibility tracking.
+
+### Changed
+
+- Simplified `LDP_PriceUpdateParams` by removing the `month` field (pricing is now date-based).
+- Reduced notice banner font size to 12 and vertical padding to 8 for a more compact look.
 
 ### Removed
 
-- Removed custom asset support for icons (`fromImage`, `toImage`, `closeImage`).
-- Removed selection callbacks that were no longer used (`onSelectFromDate`).
-- Removed redundant UI configuration fields (`textCancel`, `cancelColor`).
+- Removed `onMonthVisible` callback from `LDP_PresentParams`.
+- Removed native scroll listening logic for currently visible months.
 
 ## [1.0.0] - 2026-05-05
 

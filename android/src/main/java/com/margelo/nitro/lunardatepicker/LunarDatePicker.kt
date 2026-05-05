@@ -76,6 +76,19 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
     }
   }
 
+  /**
+   * Cập nhật giá cho một tháng cụ thể
+   * Có thể gọi khi calendar đang mở để cập nhật UI ngay lập tức
+   */
+  override fun updatePrices(params: LDP_PriceUpdateParams) {
+    try {
+      coordinator.updatePrices(params)
+      Log.d(TAG, "Prices updated successfully")
+    } catch (e: Exception) {
+      Log.w(TAG, "Failed to update prices: ${e.message}", e)
+    }
+  }
+
   // MARK: - Private Methods
 
   /**

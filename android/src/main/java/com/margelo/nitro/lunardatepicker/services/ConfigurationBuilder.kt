@@ -72,7 +72,9 @@ class ConfigurationBuilder {
         backgroundColor = ColorUtils.colorFromHex(theme.backgroundColor),
         titleColor = ColorUtils.colorFromHex(theme.titleColor),
         secondaryTextColor = ColorUtils.colorFromHex(theme.secondColor),
-        submitButtonColor = ColorUtils.colorFromHex(theme.submitButtonColor)
+        submitButtonColor = ColorUtils.colorFromHex(theme.submitButtonColor),
+        noticeLabelColor = ColorUtils.colorFromHex(theme.noticeLabelColor),
+        noticeBackgroundColor = ColorUtils.colorFromHex(theme.noticeBackgroundColor)
       ),
       dayCell = config.dayCell.copy(
         dateLabelColor = ColorUtils.colorFromHex(theme.dateLabelColor),
@@ -80,6 +82,8 @@ class ConfigurationBuilder {
         weekendLabelColor = ColorUtils.colorFromHex(theme.weekendLabelColor),
         lunarDateLabelColor = ColorUtils.colorFromHex(theme.lunarDateLabelColor),
         specialDateLabelColor = ColorUtils.colorFromHex(theme.specialDayLabelColor),
+        priceLabelColor = ColorUtils.colorFromHex(theme.priceLabelColor),
+        cheapestPriceLabelColor = ColorUtils.colorFromHex(theme.cheapestPriceLabelColor),
         rangeBackgroundColor = ColorUtils.colorFromHex(theme.rangeBackgroundColor),
         selectedBackgroundColor = ColorUtils.colorFromHex(theme.selectedBackgroundColor),
         selectedTextColor = ColorUtils.colorFromHex(theme.selectedTextColor)

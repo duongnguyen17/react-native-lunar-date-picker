@@ -25,6 +25,7 @@ import com.kizitonwose.calendar.view.CalendarView
 import com.kizitonwose.calendar.view.MarginValues
 import com.kizitonwose.calendar.view.MonthDayBinder
 import com.kizitonwose.calendar.view.MonthHeaderFooterBinder
+import com.margelo.nitro.lunardatepicker.LDP_PriceData
 import com.margelo.nitro.lunardatepicker.LDP_Range
 import com.margelo.nitro.lunardatepicker.R
 import com.margelo.nitro.lunardatepicker.constants.DataConstants
@@ -53,17 +54,23 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
         private const val ARG_MIN_DATE = DataConstants.BundleKeys.ARG_MIN_DATE
         private const val ARG_MAX_DATE = DataConstants.BundleKeys.ARG_MAX_DATE
         private const val ARG_INITIAL_VALUE = DataConstants.BundleKeys.ARG_INITIAL_VALUE
+        private const val ARG_NOTICE = DataConstants.BundleKeys.ARG_NOTICE
 
         fun newInstance(
             config: PickerConfig,
             minimumDate: LocalDate? = null,
             maximumDate: LocalDate? = null,
             initialValue: LDP_Range? = null,
+            prices: Map<String, LDP_PriceData>? = null,
+            notice: String? = null,
+            onMounted: ((String, String) -> Unit)? = null,
+            onSelectFromDate: ((String, String) -> Unit)? = null,
             onResult: (LDP_Range) -> Unit
         ): LunarDatePickerFragment {
             val fragment = LunarDatePickerFragment()
-            fragment.setupCallbacks(onResult)
-            fragment.arguments = createArguments(config, minimumDate, maximumDate, initialValue)
+            fragment.setupCallbacks(onResult, onMounted, onSelectFromDate)
+            fragment.pricesMap = prices
+            fragment.arguments = createArguments(config, minimumDate, maximumDate, initialValue, notice)
             return fragment
         }
 
@@ -71,13 +78,15 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
             config: PickerConfig,
             minimumDate: LocalDate?,
             maximumDate: LocalDate?,
-            initialValue: LDP_Range?
+            initialValue: LDP_Range?,
+            notice: String?
         ): Bundle {
             return Bundle().apply {
                 putSerializable(ARG_CONFIG, config)
                 minimumDate?.let { putString(ARG_MIN_DATE, it.toString()) }
                 maximumDate?.let { putString(ARG_MAX_DATE, it.toString()) }
                 initialValue?.let { putSerializable(ARG_INITIAL_VALUE, SerializableRange.fromRange(it)) }
+                notice?.let { putString(ARG_NOTICE, it) }
             }
         }
     }
@@ -94,9 +103,15 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
     private var initialValue: LDP_Range? = null
     private var selection = DateSelection()
     private val timeZone: ZoneId by lazy { config.calendar.timeZone.toZoneId() }
+    
+    // Price data: key = "DD/MM/YYYY"
+    var pricesMap: Map<String, LDP_PriceData>? = null
+    private var noticeText: String? = null
 
     // Callbacks
     private var onResultCallback: ((LDP_Range) -> Unit)? = null
+    private var onMountedCallback: ((String, String) -> Unit)? = null
+    private var onSelectFromDateCallback: ((String, String) -> Unit)? = null
 
     // UI Elements
     private var submitIcon: TextView? = null
@@ -136,6 +151,7 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
             maximumDate = args.getString(ARG_MAX_DATE)?.let { LocalDate.parse(it) }
             val serializableRange = args.getSerializable(ARG_INITIAL_VALUE) as? SerializableRange
             initialValue = serializableRange?.toRange()
+            noticeText = args.getString(ARG_NOTICE)
         }
     }
 
@@ -145,9 +161,13 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
     }
 
     private fun setupCallbacks(
-        onResult: (LDP_Range) -> Unit
+        onResult: (LDP_Range) -> Unit,
+        onMounted: ((String, String) -> Unit)? = null,
+        onSelectFromDate: ((String, String) -> Unit)? = null
     ) {
         onResultCallback = onResult
+        onMountedCallback = onMounted
+        onSelectFromDateCallback = onSelectFromDate
     }
 
     private fun createBottomSheetView(): View {
@@ -159,10 +179,41 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
         // Always add header bar (contains title, close button and submit button)
         rootView.addView(createHeaderBar())
         
+        noticeText?.takeIf { it.isNotEmpty() }?.let { text ->
+            rootView.addView(createNoticeView(text))
+        }
+        
         rootView.addView(uiBuilder.createWeekView())
         rootView.addView(createCalendarContainer())
 
         return rootView
+    }
+    
+    private fun createNoticeView(text: String): View {
+        val context = requireContext()
+        val noticeContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(config.controller.noticeBackgroundColor)
+            setPadding(
+                dpToPx(ScaleUtils.scaleDp(16)),
+                dpToPx(ScaleUtils.scaleDp(8)),
+                dpToPx(ScaleUtils.scaleDp(16)),
+                dpToPx(ScaleUtils.scaleDp(8))
+            )
+        }
+        
+        val noticeLabel = android.widget.TextView(context).apply {
+            this.text = text
+            setTextColor(config.controller.noticeLabelColor)
+            textSize = ScaleUtils.scale(12f)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        }
+        
+        noticeContainer.addView(noticeLabel)
+        return noticeContainer
     }
 
     /**
@@ -282,7 +333,8 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
                     dateConverter = dateConverter,
                     timeZone = timeZone,
                     isDateEnabled = ::isDateEnabled,
-                    onDateClick = ::handleDateSelection
+                    onDateClick = ::handleDateSelection,
+                    priceMap = pricesMap
                 )
             }
 
@@ -290,6 +342,8 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
                 container.apply {
                     selectedFromDate = selection.startDate
                     selectedToDate = selection.endDate
+                    // Sync latest price map (may be updated after fragment creation)
+                    updatePriceMap(pricesMap)
                     bind(data)
                 }
             }
@@ -330,6 +384,8 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
                     if (config.controller.isSingleMode) selection.startDate != null else (selection.startDate != null && selection.endDate != null)
                 )
             }
+            // Fire onMounted after dialog is fully shown & stable
+            fireOnMounted()
         }
     }
 
@@ -352,6 +408,12 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
                 setConfirmButtonEnabled(false)
             }
         }
+
+        // Fire onSelectFromDate khi user chọn from date mới (range chưa hoàn chỉnh)
+        if (!shouldComplete) {
+            fireOnSelectFromDate(date)
+        }
+
         calendarView.notifyCalendarChanged()
     }
 
@@ -479,6 +541,8 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
 
     private fun cleanup() {
         onResultCallback = null
+        onMountedCallback = null
+        onSelectFromDateCallback = null
     }
 
     private fun prewarmLunarCache() {
@@ -518,5 +582,43 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
             it.isEnabled = enabled
             it.alpha = if (enabled) 1.0f else 0.5f // Visual feedback
         }
+    }
+
+    /**
+     * Cập nhật price map và notify calendar rebind.
+     * Có thể gọi khi calendar đang hiển thị.
+     */
+    fun updatePrices(newPrices: Map<String, LDP_PriceData>) {
+        val merged = (pricesMap ?: emptyMap()).toMutableMap()
+        merged.putAll(newPrices)
+        pricesMap = merged
+        calendarView.notifyCalendarChanged()
+    }
+
+    /**
+     * Fire onMounted sau khi dialog fully shown.
+     * startDate = minimumDate hoặc năm hiện tại - yearRangeOffset
+     * endDate = maximumDate hoặc năm hiện tại + yearRangeOffset
+     */
+    private fun fireOnMounted() {
+        val callback = onMountedCallback ?: return
+        val now = LocalDate.now(timeZone)
+        val start = minimumDate ?: now.minusYears(config.yearRangeOffset.toLong())
+        val end = maximumDate ?: now.plusYears(config.yearRangeOffset.toLong())
+        val startStr = dateConverter.stringFromDate(start, timeZone)
+        val endStr = dateConverter.stringFromDate(end, timeZone)
+        callback(startStr, endStr)
+    }
+
+    /**
+     * Fire onSelectFromDate với startDate = ngày user chọn, endDate = calendar end
+     */
+    private fun fireOnSelectFromDate(selectedDate: LocalDate) {
+        val callback = onSelectFromDateCallback ?: return
+        val now = LocalDate.now(timeZone)
+        val end = maximumDate ?: now.plusYears(config.yearRangeOffset.toLong())
+        val startStr = dateConverter.stringFromDate(selectedDate, timeZone)
+        val endStr = dateConverter.stringFromDate(end, timeZone)
+        callback(startStr, endStr)
     }
 }

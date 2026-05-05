@@ -19,7 +19,7 @@ final class ConfigurationBuilder: ConfigurationProviding {
 
     // Apply basic configuration
     pickerConfig.controller.title = params.title
-    pickerConfig.controller.isSingleMode = (params.mode == LDP_Mode.single)
+    pickerConfig.controller.isSingleMode = (params.mode == .single)
 
     // Apply theme if available
     if let globalConfig = globalConfig,
@@ -66,6 +66,8 @@ final class ConfigurationBuilder: ConfigurationProviding {
     config.controller.titleColor = ColorWrapper(fromHex: theme.titleColor)
     config.controller.secondaryTextColor = ColorWrapper(fromHex: theme.secondColor)
     config.controller.submitButtonColor = ColorWrapper(fromHex: theme.submitButtonColor)
+    config.controller.noticeLabelColor = ColorWrapper(fromHex: theme.noticeLabelColor)
+    config.controller.noticeBackgroundColor = ColorWrapper(fromHex: theme.noticeBackgroundColor)
 
     // Day cell colors
     config.dayCell.dateLabelColor = ColorWrapper(fromHex: theme.dateLabelColor)
@@ -78,6 +80,12 @@ final class ConfigurationBuilder: ConfigurationProviding {
     )
     config.dayCell.specialDateLabelColor = ColorWrapper(
       fromHex: theme.specialDayLabelColor
+    )
+    config.dayCell.priceLabelColor = ColorWrapper(
+      fromHex: theme.priceLabelColor
+    )
+    config.dayCell.cheapestPriceLabelColor = ColorWrapper(
+      fromHex: theme.cheapestPriceLabelColor
     )
     config.dayCell.rangeBackgroundColor = ColorWrapper(
       fromHex: theme.rangeBackgroundColor

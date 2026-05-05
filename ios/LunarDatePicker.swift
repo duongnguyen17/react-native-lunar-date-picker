@@ -65,7 +65,12 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
 
     // Present using coordinator
     try coordinator.present(with: params)
-  }  
+  }
+
+  /// Cập nhật giá cho một tháng cụ thể
+  public func updatePrices(params: LDP_PriceUpdateParams) throws {
+    coordinator.updatePrices(with: params)
+  }
 
   // MARK: - Private Methods
 
@@ -78,14 +83,21 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
       guard isValidHexColor(theme.backgroundColor),
         isValidHexColor(theme.titleColor),
         isValidHexColor(theme.dateLabelColor),
+        isValidHexColor(theme.todayLabelColor),
         isValidHexColor(theme.lunarDateLabelColor),
         isValidHexColor(theme.selectedTextColor),
         isValidHexColor(theme.weekendLabelColor),
         isValidHexColor(theme.specialDayLabelColor),
+        isValidHexColor(theme.priceLabelColor),
+        isValidHexColor(theme.cheapestPriceLabelColor),
         isValidHexColor(theme.monthLabelColor),
+        isValidHexColor(theme.secondColor),
         isValidHexColor(theme.weekViewBackgroundColor),
         isValidHexColor(theme.selectedBackgroundColor),
-        isValidHexColor(theme.rangeBackgroundColor)
+        isValidHexColor(theme.rangeBackgroundColor),
+        isValidHexColor(theme.submitButtonColor),
+        isValidHexColor(theme.noticeLabelColor),
+        isValidHexColor(theme.noticeBackgroundColor)
       else {
         throw LunarDatePickerError.invalidConfiguration
       }

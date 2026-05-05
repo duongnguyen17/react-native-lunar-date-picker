@@ -47,6 +47,11 @@ final class LunarDatePickerCoordinator {
     self.globalConfig = config
   }
 
+  /// Cập nhật giá cho một tháng — delegate xuống PickerController đang hiển thị
+  func updatePrices(with params: LDP_PriceUpdateParams) {
+    currentRangeController?.updatePrices(params.prices)
+  }
+
   
   
   /// Cleanup method to clear all references and prevent memory leaks
@@ -112,6 +117,19 @@ final class LunarDatePickerCoordinator {
     params: LDP_PresentParams,
     from viewController: UIViewController
   ) {
+    // Configure prices
+    if let prices = params.prices {
+      rangeController.hasPrices = true
+      for price in prices {
+        rangeController.priceMap[price.date] = price
+      }
+    }
+
+    // Configure callbacks
+    rangeController.onMounted = params.onMounted
+    rangeController.onSelectFromDate = params.onSelectFromDate
+    rangeController.noticeText = params.notice
+
     rangeController.doneHandler = { [weak self] selected in
       guard let selected = selected,
         let self = self
