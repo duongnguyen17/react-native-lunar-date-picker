@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-05-12
+
+### Fixed
+
+- Fixed `onSelectFromDate` callback not triggering on iOS and Android when `showSubmitButton` is set to `false`.
+
 ## [1.0.1] - 2026-05-05
 
 ### Fixed
@@ -62,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/duongnguyen17/react-native-lunar-date-picker/releases/tag/v1.0.0

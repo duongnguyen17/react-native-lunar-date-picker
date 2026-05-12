@@ -439,11 +439,13 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
             currentFrom == null || currentTo != null -> {
                 selection = DateSelection(startDate = date, endDate = null)
                 calendarView.notifyCalendarChanged()
+                fireOnSelectFromDate(date)
                 true
             }
             date.isBefore(currentFrom) -> {
                 selection = DateSelection(startDate = date, endDate = null)
                 calendarView.notifyCalendarChanged()
+                fireOnSelectFromDate(date)
                 true
             }
             else -> {

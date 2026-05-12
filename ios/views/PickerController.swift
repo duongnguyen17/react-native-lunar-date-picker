@@ -734,6 +734,8 @@ final class PickerController<Value: PickerValue>: UIViewController {
           self?.selectValue(newRange as? Value, in: calendar)
         }
       }
+      // Fire callback with selected from date
+      fireOnSelectFromDate(selectedDate: from)
       return true
     }
 
@@ -749,6 +751,8 @@ final class PickerController<Value: PickerValue>: UIViewController {
           self?.selectValue(newRange as? Value, in: calendar)
         }
       }
+      // Fire callback with selected from date
+      fireOnSelectFromDate(selectedDate: from)
       return true
     }
 
@@ -765,6 +769,8 @@ final class PickerController<Value: PickerValue>: UIViewController {
           self?.selectValue(newRange as? Value, in: calendar)
         }
       }
+      // Fire callback with selected from date
+      fireOnSelectFromDate(selectedDate: newFrom)
       return true
     } else {
       // Complete and close

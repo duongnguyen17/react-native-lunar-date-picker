@@ -55,7 +55,7 @@ export const PICKER_CONFIG: LDP_ConfigParams = {
   },
   yearRangeOffset: 2,
   timeZoneOffset: 7,
-  showSubmitButton: true,
+  showSubmitButton: false,
 };
 
 export const MOCK_API_CONFIG = {
