@@ -815,6 +815,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
 
   /// Cập nhật price map với dữ liệu mới cho 1 tháng, reload lại calendar
   internal func updatePrices(_ newPrices: [LDP_PriceData]) {
+    priceMap.removeAll()
     for price in newPrices {
       priceMap[price.date] = price
     }

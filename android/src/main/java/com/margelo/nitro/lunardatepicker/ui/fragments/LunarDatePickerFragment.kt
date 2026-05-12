@@ -591,9 +591,7 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
      * Có thể gọi khi calendar đang hiển thị.
      */
     fun updatePrices(newPrices: Map<String, LDP_PriceData>) {
-        val merged = (pricesMap ?: emptyMap()).toMutableMap()
-        merged.putAll(newPrices)
-        pricesMap = merged
+        pricesMap = newPrices
         calendarView.notifyCalendarChanged()
     }
 
