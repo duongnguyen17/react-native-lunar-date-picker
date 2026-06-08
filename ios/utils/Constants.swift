@@ -15,7 +15,7 @@ enum Constants {
     static let cellSizeWithoutPrice: CGFloat = Scale.value(44)
     static let rangeViewCornerRadius: CGFloat = 6
     static let weekViewHeight: CGFloat = Scale.value(28)
-    static let defaultPickerSize = CGSize(width: 445, height: 550)
+    static let defaultPickerSize = CGSize(width: 430, height: 550)
     static let minimumLineSpacing: CGFloat = Scale.value(8)
     static let minimumInteritemSpacing: CGFloat = 0
     static let closeIconSize: CGFloat = Scale.value(20)

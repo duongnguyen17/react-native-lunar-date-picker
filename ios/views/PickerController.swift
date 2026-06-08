@@ -266,8 +266,6 @@ final class PickerController<Value: PickerValue>: UIViewController {
     }
     if viewController.preferredContentSize != .zero {
       navVc.preferredContentSize = viewController.preferredContentSize
-    } else {
-      navVc.preferredContentSize = Constants.UI.defaultPickerSize
     }
 
     viewController.present(navVc, animated: flag, completion: completion)

@@ -18,7 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import androidx.fragment.app.DialogFragment
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.view.CalendarView
@@ -46,7 +46,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 
-class LunarDatePickerFragment : BottomSheetDialogFragment() {
+class LunarDatePickerFragment : DialogFragment() {
 
     companion object {
         private const val TAG = DataConstants.LogTags.FRAGMENT
@@ -125,11 +125,27 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val bottomSheetDialog = BottomSheetDialog(requireContext())
-        val view = createBottomSheetView()
-        bottomSheetDialog.setContentView(view)
-        setupBottomSheetBehavior(bottomSheetDialog)
-        return bottomSheetDialog
+        val displayMetrics = resources.displayMetrics
+        val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
+        val isTablet = screenWidthDp >= 540f
+
+        val view = createBottomSheetView(isTablet)
+
+        if (isTablet) {
+            val dialog = Dialog(requireContext())
+            dialog.setContentView(view)
+            dialog.window?.let { window ->
+                window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                window.setLayout(dpToPx(540), dpToPx(620))
+                window.setGravity(android.view.Gravity.CENTER)
+            }
+            return dialog
+        } else {
+            val bottomSheetDialog = BottomSheetDialog(requireContext())
+            bottomSheetDialog.setContentView(view)
+            setupBottomSheetBehavior(bottomSheetDialog)
+            return bottomSheetDialog
+        }
     }
 
     override fun onDestroyView() {
@@ -170,10 +186,20 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
         onSelectFromDateCallback = onSelectFromDate
     }
 
-    private fun createBottomSheetView(): View {
+    private fun createBottomSheetView(isTablet: Boolean): View {
         val rootView = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(config.controller.backgroundColor)
+            
+            val radius = dpToPx(16).toFloat()
+            background = GradientDrawable().apply {
+                setColor(config.controller.backgroundColor)
+                if (isTablet) {
+                    cornerRadii = floatArrayOf(radius, radius, radius, radius, radius, radius, radius, radius)
+                } else {
+                    cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+                }
+            }
+            clipToOutline = true
         }
 
         // Always add header bar (contains title, close button and submit button)
@@ -224,7 +250,7 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
         
         val headerBar = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            setBackgroundColor(config.controller.backgroundColor)
+            setBackgroundColor(android.graphics.Color.TRANSPARENT)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -240,7 +266,7 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
 
         val closeIcon = TextView(context).apply {
             text = "✕"
-            textSize = 18f
+            textSize = ScaleUtils.scale(18f)
             setTextColor(config.controller.titleColor)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 0)
@@ -263,7 +289,7 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
         // Right submit icon
         submitIcon = TextView(context).apply {
             text = "✔️"
-            textSize = 16f
+            textSize = ScaleUtils.scale(16f)
             setTextColor(config.controller.submitButtonColor)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 0)
@@ -377,6 +403,7 @@ class LunarDatePickerFragment : BottomSheetDialogFragment() {
                 behavior.state = BottomSheetBehavior.STATE_EXPANDED
                 behavior.skipCollapsed = true
                 behavior.isDraggable = true
+                it.background = android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
             }
             scrollToCurrentDateIfNeeded()
             if (config.controller.showSubmitButton) {
