@@ -141,6 +141,9 @@ final class PickerController<Value: PickerValue>: UIViewController {
 
   /// Flag to track if initial scroll to selected date is needed
   private var needsInitialScroll = true
+  
+  /// Track previous bounds size to invalidate layout on FormSheet resize
+  private var previousBoundsSize: CGSize = .zero
 
   /// Currently selected value
   private var value: Value?
@@ -875,6 +878,17 @@ final class PickerController<Value: PickerValue>: UIViewController {
 
   override public func viewDidLayoutSubviews() {
     super.viewDidLayoutSubviews()
+
+    // Detect bounds change to force layout recalculation
+    // This is critical for iPad FormSheet where initial bounds are full screen
+    // causing JTAppleCalendar to cache overly wide columns
+    if self.calendarView.bounds.size != self.previousBoundsSize {
+      self.previousBoundsSize = self.calendarView.bounds.size
+      // Force layout invalidation & data reload to calculate correct sizes
+      DispatchQueue.main.async { [weak self] in
+        self?.calendarView.reloadData()
+      }
+    }
 
     // Update bottom padding so the last content isn't obscured by the home indicator
     let desiredBottomInset: CGFloat = self.config.controller.showSubmitButton ? 20 : self.view.safeAreaInsets.bottom
