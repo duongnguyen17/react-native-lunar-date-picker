@@ -6,17 +6,15 @@ import kotlin.math.ceil
 
 object ScaleUtils {
 
-    private val displayMetrics = Resources.getSystem().displayMetrics
-    private val screenWidthPx = displayMetrics.widthPixels.toFloat()
-    private val density = displayMetrics.density
-
-    private val screenWidthDp: Float by lazy {
-        screenWidthPx / density
-    }
-
     private const val BASE_WIDTH = 390f
     private const val MAX_WIDTH = 430f
     private const val BASE_SPACING = 4f
+
+    private val screenWidthDp: Float
+        get() {
+            val displayMetrics = Resources.getSystem().displayMetrics
+            return displayMetrics.widthPixels.toFloat() / displayMetrics.density
+        }
 
     fun scale(value: Float, factor: Float = 1f): Float {
         val calcWidth = min(screenWidthDp, MAX_WIDTH)
