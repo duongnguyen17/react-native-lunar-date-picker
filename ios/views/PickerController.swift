@@ -245,6 +245,15 @@ final class PickerController<Value: PickerValue>: UIViewController {
     fireOnMounted()
   }
 
+  override public func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+    // Dừng calendar đang cuộn (nếu có) trước khi controller bị dismiss/deinit
+    // để tránh việc JTAppleCalendar tiếp tục gọi delegate sinh ra assertion failure
+    self.calendarView.setContentOffset(self.calendarView.contentOffset, animated: false)
+    self.calendarView.panGestureRecognizer.isEnabled = false
+    self.calendarView.panGestureRecognizer.isEnabled = true
+  }
+
   deinit {
     cleanup()
     cleanupTodayTimer()
