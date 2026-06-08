@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-08
+
+### Added
+
+- Implemented a fluid typography and layout scaling system (390px base to 430px cap) to ensure consistent UI across different screen sizes on both platforms.
+
+### Changed
+
+- **iOS**: Upgraded iPad presentation to use native Form Sheet sizing by removing hardcoded constraints, providing a more standard tablet experience.
+- **Android**: Enhanced tablet presentation (≥ 540dp) to use a centered, 4-corner rounded Dialog replicating the iPad Form Sheet behavior, rather than a full-width Bottom Sheet.
+
 ## [1.0.3] - 2026-05-12
 
 ### Changed
@@ -74,7 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.3...v1.1.0
 [1.0.3]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.0...v1.0.1

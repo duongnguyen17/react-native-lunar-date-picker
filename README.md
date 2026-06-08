@@ -18,6 +18,8 @@ A powerful and feature-rich React Native lunar date picker component built with 
 - 📱 **Cross-platform** - Works seamlessly on iOS and Android with identical behavior
 - ⚡ **High performance** - Built with Nitro Modules for native performance
 - 🚀 **Optimized Android rendering** - Uses high-performance [kizitonwose Calendar](https://github.com/kizitonwose/Calendar) library for 60% faster scrolling
+- 📏 **Fluid layout scaling** - Automatically scales typography and UI elements for a consistent look across all phone sizes (390px to 430px)
+- 🖥️ **Native tablet support** - Beautiful centered Form Sheet presentation on iPads and Android tablets
 - 🎨 **Customizable themes** - Light/dark themes with full customization
 - 🌍 **Multi-language support** - Vietnamese, English, and extensible for other languages
 - 📅 **Flexible date selection** - Single date or date range selection
@@ -312,6 +314,7 @@ The picker includes several performance improvements:
 **Cross-platform Optimizations:**
 
 - **Timezone-aware caching**: Consistent date formatting and lunar calculations
+- **Fluid scaling & Tablet bounds**: Responsive typography on mobile and centered Dialogs/Form Sheets on tablets
 - **Memory leak prevention**: Proper cleanup of handlers, work items, and references
 - **LRU cache management**: Smart cache eviction prevents memory growth (iOS)
 - **Object reuse**: Calendar instances and formatters are reused to reduce allocations

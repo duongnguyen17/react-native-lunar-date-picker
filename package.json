@@ -1,6 +1,6 @@
 {
   "name": "@2security/lunar-date-picker",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "A powerful React Native lunar date picker with timezone support, lazy loading, and native performance built on Nitro Modules",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
