@@ -585,6 +585,11 @@ final class PickerController<Value: PickerValue>: UIViewController {
     for config: inout DayCell.ViewConfig,
     date: Date
   ) {
+    if !self.config.dayCell.showLunarDate {
+      config.lunarDateLabelText = ""
+      return
+    }
+
     // Try to get from cache first
     let lunarDate: (day: Int, month: Int)
     if let cached = getCachedLunarDate(for: date) {

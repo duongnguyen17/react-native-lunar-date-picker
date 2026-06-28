@@ -127,16 +127,23 @@ class DayViewHolder(
     dayText = TextView(context).apply {
       gravity = Gravity.CENTER
       textSize = LayoutConstants.TextSize.DAY_TEXT
+      includeFontPadding = false
     }
 
     lunarText = TextView(context).apply {
       gravity = Gravity.CENTER
       textSize = LayoutConstants.TextSize.LUNAR_TEXT
+      includeFontPadding = false
     }
 
     priceText = TextView(context).apply {
       gravity = Gravity.CENTER
-      textSize = LayoutConstants.TextSize.PRICE_TEXT
+      textSize = if (config.calendar.showLunarDate) {
+        LayoutConstants.TextSize.PRICE_TEXT
+      } else {
+        ScaleUtils.scale(9f)
+      }
+      includeFontPadding = false
       visibility = View.GONE
     }
 
@@ -145,13 +152,13 @@ class DayViewHolder(
       gravity = Gravity.CENTER
       setPadding(
         dpToPx(ScaleUtils.scaleDp(2)),
-        dpToPx(ScaleUtils.scaleDp(4)),
+        0,
         dpToPx(ScaleUtils.scaleDp(2)),
-        dpToPx(ScaleUtils.scaleDp(4))
+        0
       )
       layoutParams = LinearLayout.LayoutParams(
         UIConstants.DayCell.SELECTED_CIRCLE_SIZE,
-        ViewGroup.LayoutParams.WRAP_CONTENT
+        UIConstants.DayCell.SELECTED_CIRCLE_SIZE
       )
     }
 
@@ -193,6 +200,7 @@ class DayViewHolder(
     leftRangeView.setBackgroundColor(UIConstants.Colors.TRANSPARENT)
     priceText.visibility = View.GONE
     priceText.text = ""
+    lunarText.visibility = View.VISIBLE
   }
 
   private fun bindMonthDate(data: CalendarDay) {
@@ -212,10 +220,16 @@ class DayViewHolder(
       alpha = UIConstants.Alpha.FULLY_VISIBLE
     }
 
-    val lunarInfo = getLunarDateInfo(data.date)
-    lunarText.apply {
-      text = lunarInfo.text
-      setTextColor(lunarInfo.color)
+    if (config.calendar.showLunarDate) {
+      val lunarInfo = getLunarDateInfo(data.date)
+      lunarText.apply {
+        visibility = View.VISIBLE
+        text = lunarInfo.text
+        setTextColor(lunarInfo.color)
+      }
+    } else {
+      lunarText.visibility = View.GONE
+      lunarText.text = ""
     }
 
     // Configure price label
@@ -248,7 +262,7 @@ class DayViewHolder(
         else config.dayCell.priceLabelColor
       )
     } else {
-      priceText.text = ""
+      priceText.text = " "
     }
   }
 

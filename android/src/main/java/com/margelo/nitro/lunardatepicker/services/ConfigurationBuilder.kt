@@ -50,6 +50,9 @@ class ConfigurationBuilder {
       pickerConfig = pickerConfig.copy(
         controller = pickerConfig.controller.copy(
           showSubmitButton = config.showSubmitButton
+        ),
+        calendar = pickerConfig.calendar.copy(
+          showLunarDate = config.showLunarDate
         )
       )
     }

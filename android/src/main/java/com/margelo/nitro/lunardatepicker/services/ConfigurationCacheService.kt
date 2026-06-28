@@ -60,6 +60,9 @@ class ConfigurationCacheService {
       config = config.copy(
         controller = config.controller.copy(
           showSubmitButton = globalConf.showSubmitButton
+        ),
+        calendar = config.calendar.copy(
+          showLunarDate = globalConf.showLunarDate
         )
       )
     }
@@ -204,6 +207,7 @@ class ConfigurationCacheService {
       keyBuilder.append(it.timeZoneOffset).append("|")
       keyBuilder.append(it.yearRangeOffset).append("|")
       keyBuilder.append(it.showSubmitButton).append("|")
+      keyBuilder.append(it.showLunarDate).append("|")
     }
     return generateMD5Hash(keyBuilder.toString())
   }

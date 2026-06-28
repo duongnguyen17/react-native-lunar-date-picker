@@ -39,14 +39,23 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const loadedMonths = useRef<Set<string>>(new Set());
   const loadingMonths = useRef<Set<string>>(new Set());
 
+  const [showLunarDate, setShowLunarDate] = useState(true);
+
   useEffect(() => {
-    configure(PICKER_CONFIG);
-  }, []);
+    configure({
+      ...PICKER_CONFIG,
+      showLunarDate,
+    });
+  }, [showLunarDate]);
 
   const toggleTheme = useCallback(() => {
     setCurrentTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   }, []);
 
+  const toggleLunarDate = useCallback(() => {
+    setShowLunarDate((prev) => !prev);
+  }, []);
+  
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
@@ -247,7 +256,9 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.placeholder} />
+          <TouchableOpacity style={styles.themeButton} onPress={toggleLunarDate}>
+            <Text style={{fontSize: 12, fontWeight: 'bold'}}>{showLunarDate ? '🌕' : '🌑'}</Text>
+          </TouchableOpacity>
           <Text style={[styles.title, { color: textColor }]}>
             Lunar Date Picker
           </Text>

@@ -127,6 +127,7 @@ data class CalendarConfig(
   // Color properties used by optimized calendar
   var dateLabelColor: Int = Color.BLACK,
   var lunarDateLabelColor: Int = "#8E8E93".toColorInt(),
+  var showLunarDate: Boolean = true,
   var selectedBackgroundColor: Int = "#007AFF".toColorInt(),
   var selectedTextColor: Int = Color.WHITE,
   var rangeBackgroundColor: Int = "#E5F3FF".toColorInt()

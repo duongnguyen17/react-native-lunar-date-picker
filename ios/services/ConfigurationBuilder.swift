@@ -48,6 +48,7 @@ final class ConfigurationBuilder: ConfigurationProviding {
     // Apply global settings if available in globalConfig
     if let globalConfig = globalConfig {
       pickerConfig.controller.showSubmitButton = globalConfig.showSubmitButton
+      pickerConfig.dayCell.showLunarDate = globalConfig.showLunarDate
     }
 
     // Force showSubmitButton to false in single mode

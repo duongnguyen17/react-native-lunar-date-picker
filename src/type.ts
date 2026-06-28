@@ -136,6 +136,8 @@ export type LDP_ConfigParams = {
   yearRangeOffset: number;
   timeZoneOffset: number;
 
+  showLunarDate: boolean;
+
   /**
    * field này được thêm vào config thay vì present params
    * vì trong 1 app, cần có tính thống nhất cho các picker
