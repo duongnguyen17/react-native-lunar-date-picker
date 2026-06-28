@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-06-28
+
+### Fixed
+
+- **Android**: Fixed `showLunarDate` updates being ignored by `ConfigurationCacheService`.
+- **iOS & Android**: Refactored cell layouts to maintain a strictly fixed 42x42 selection circle.
+- **iOS & Android**: Preserved vertical text alignment across the calendar by reserving space for empty price data.
+- **Android**: Removed text padding (`includeFontPadding`) to prevent vertical clipping.
+- **iOS & Android**: Dynamically increased price text font size when lunar dates are hidden.
+
 ## [1.1.1] - 2026-06-08
 
 ### Fixed
@@ -92,7 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.3...v1.1.0
 [1.0.3]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.2...v1.0.3

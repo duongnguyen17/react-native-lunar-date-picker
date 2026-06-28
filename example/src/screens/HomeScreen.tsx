@@ -55,7 +55,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const toggleLunarDate = useCallback(() => {
     setShowLunarDate((prev) => !prev);
   }, []);
-  
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
@@ -256,8 +256,13 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.themeButton} onPress={toggleLunarDate}>
-            <Text style={{fontSize: 12, fontWeight: 'bold'}}>{showLunarDate ? '🌕' : '🌑'}</Text>
+          <TouchableOpacity
+            style={styles.themeButton}
+            onPress={toggleLunarDate}
+          >
+            <Text style={{ fontSize: 12, fontWeight: 'bold' }}>
+              {showLunarDate ? '🌕' : '🌑'}
+            </Text>
           </TouchableOpacity>
           <Text style={[styles.title, { color: textColor }]}>
             Lunar Date Picker
