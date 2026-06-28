@@ -134,17 +134,27 @@ class DayViewHolder(
       gravity = Gravity.CENTER
       textSize = LayoutConstants.TextSize.LUNAR_TEXT
       includeFontPadding = false
+      layoutParams = LinearLayout.LayoutParams(
+        ViewGroup.LayoutParams.WRAP_CONTENT,
+        ViewGroup.LayoutParams.WRAP_CONTENT
+      ).apply {
+        gravity = Gravity.END
+        topMargin = dpToPx(ScaleUtils.scaleDp(-3))
+        marginEnd = dpToPx(ScaleUtils.scaleDp(8))
+      }
     }
 
     priceText = TextView(context).apply {
       gravity = Gravity.CENTER
-      textSize = if (config.calendar.showLunarDate) {
-        LayoutConstants.TextSize.PRICE_TEXT
-      } else {
-        ScaleUtils.scale(9f)
-      }
+      textSize = LayoutConstants.TextSize.PRICE_TEXT
       includeFontPadding = false
       visibility = View.GONE
+      layoutParams = LinearLayout.LayoutParams(
+        ViewGroup.LayoutParams.WRAP_CONTENT,
+        ViewGroup.LayoutParams.WRAP_CONTENT
+      ).apply {
+        topMargin = dpToPx(ScaleUtils.scaleDp(2))
+      }
     }
 
     selectionContainer = LinearLayout(context).apply {

@@ -84,6 +84,7 @@ final class DayCell: JTACDayCell {
   // MARK: - Properties
 
   private var config: PickerConfig = PickerConfig.default
+  private var priceLabelTopConstraint: NSLayoutConstraint?
   
 
   // MARK: - Lifecycle
@@ -159,19 +160,22 @@ final class DayCell: JTACDayCell {
       dateLabel.centerXAnchor.constraint(equalTo: dateContainerView.centerXAnchor),
       dateLabel.topAnchor.constraint(equalTo: dateContainerView.topAnchor),
       
-      lunarDateLabel.centerXAnchor.constraint(equalTo: dateContainerView.centerXAnchor),
+      lunarDateLabel.trailingAnchor.constraint(equalTo: dateContainerView.trailingAnchor, constant: -8),
       lunarDateLabel.topAnchor.constraint(
         equalTo: dateLabel.bottomAnchor,
-        constant: Constants.Layout.lunarDateLabelTopSpacing
+        constant: -2
       ),
 
       priceLabel.centerXAnchor.constraint(equalTo: dateContainerView.centerXAnchor),
-      priceLabel.topAnchor.constraint(
-        equalTo: lunarDateLabel.bottomAnchor,
-        constant: Constants.Layout.priceLabelTopSpacing
-      ),
       priceLabel.bottomAnchor.constraint(equalTo: dateContainerView.bottomAnchor)
     ])
+    
+    let priceTop = priceLabel.topAnchor.constraint(
+      equalTo: dateLabel.bottomAnchor,
+      constant: Constants.Layout.priceLabelTopSpacing + 8
+    )
+    self.priceLabelTopConstraint = priceTop
+    priceTop.isActive = true
   }
 
   private func setupRangeViewConstraints() {
@@ -212,8 +216,7 @@ final class DayCell: JTACDayCell {
     dateLabel.textColor = config.dayCell.dateLabelColor.toUIColor()
     lunarDateLabel.textColor = config.dayCell.lunarDateLabelColor.toUIColor()
     
-    let priceFontSize = config.dayCell.showLunarDate ? Constants.FontSize.priceLabel : Scale.value(9)
-    priceLabel.font = UIFont.systemFont(ofSize: priceFontSize, weight: .regular)
+    priceLabel.font = UIFont.systemFont(ofSize: Constants.FontSize.priceLabel, weight: .regular)
   }
 
   private func updateSelectionBackgroundCornerRadius() {
@@ -245,6 +248,8 @@ final class DayCell: JTACDayCell {
     dateLabel.isHidden = !hasDateContent
     let isLunarEmpty = config.lunarDateLabelText?.trimmingCharacters(in: .whitespaces).isEmpty ?? true
     lunarDateLabel.isHidden = !hasDateContent || isLunarEmpty
+    
+    priceLabelTopConstraint?.constant = isLunarEmpty ? Constants.Layout.priceLabelTopSpacing : (Constants.Layout.priceLabelTopSpacing + 8)
     
     let wasHidden = selectionBackgroundView.isHidden
     selectionBackgroundView.isHidden = config.isSelectedViewHidden

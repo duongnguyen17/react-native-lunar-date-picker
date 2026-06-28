@@ -14,8 +14,8 @@ object LayoutConstants {
         val MONTH_HEADER = ScaleUtils.scale(18f)
         val DAY_TEXT = ScaleUtils.scale(16f)
         val WEEK_DAY = ScaleUtils.scale(14f)
-        val LUNAR_TEXT = ScaleUtils.scale(9f)
-        val PRICE_TEXT = ScaleUtils.scale(7f)
+        val LUNAR_TEXT = ScaleUtils.scale(7f)
+        val PRICE_TEXT = ScaleUtils.scale(10f)
     }
 
     // Padding values

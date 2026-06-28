@@ -24,8 +24,8 @@ enum Constants {
   // MARK: - Font Sizes
   enum FontSize {
     static let dateLabel: CGFloat = Scale.value(16)
-    static let lunarDateLabel: CGFloat = Scale.value(8)
-    static let priceLabel: CGFloat = Scale.value(7)
+    static let lunarDateLabel: CGFloat = Scale.value(7)
+    static let priceLabel: CGFloat = Scale.value(10)
     static let monthHeader: CGFloat = Scale.value(17)
     static let weekLabel: CGFloat = Scale.value(12)
     static let title: CGFloat = Scale.value(17)
