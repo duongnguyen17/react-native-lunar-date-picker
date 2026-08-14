@@ -55,6 +55,7 @@ export const PICKER_CONFIG: LDP_ConfigParams = {
   },
   yearRangeOffset: 2,
   timeZoneOffset: 7,
+  showLunarDate: true,
   showSubmitButton: false,
 };
 
