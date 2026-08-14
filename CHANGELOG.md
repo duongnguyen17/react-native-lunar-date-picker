@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-14
+
+### Added
+
+- **iOS & Android**: Added `updateMaximumDate(maximumDate: string)` function to dynamically update the maximum selectable date while the calendar is open (e.g. inside `onSelectFromDate` callback to restrict range selection).
+
+### Maintenance
+
+- Upgraded dependencies including React Native 0.87.0 and `react-native-nitro-modules` 0.36.5.
+
 ## [1.1.3] - 2026-06-28
+
 
 ### Fixed
 
@@ -108,8 +119,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.3...v1.2.0
 [1.1.3]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.2...v1.1.3
+
 [1.1.2]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.0.3...v1.1.0
