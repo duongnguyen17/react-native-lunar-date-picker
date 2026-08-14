@@ -136,10 +136,18 @@ extension PickerController: JTACMonthViewDelegate {
     cellState: CellState,
     indexPath: IndexPath
   ) -> Bool {
-    // Don't clear entire cache - it causes performance issues
-    // Cache will be selectively updated during cell configuration
+    if cellState.dateBelongsTo != .thisMonth {
+      return false
+    }
+    if let minimumDate = privateMinimumDate, date < minimumDate.startOfDay() {
+      return false
+    }
+    if let maximumDate = privateMaximumDate, date > maximumDate.endOfDay() {
+      return false
+    }
     return true
   }
+
 
   public func calendar(
     _ calendar: JTACMonthView,

@@ -12,4 +12,6 @@ export interface LunarDatePicker
   configure(config: LDP_ConfigParams): void;
 
   updatePrices(params: LDP_PriceUpdateParams): void;
+
+  updateMaximumDate(maximumDate: string): void;
 }

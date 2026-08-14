@@ -839,6 +839,15 @@ final class PickerController<Value: PickerValue>: UIViewController {
     }
   }
 
+  /// Cập nhật maximumDate mới và reload lại calendar UI
+  internal func updateMaximumDate(_ newMaxDate: Date) {
+    self.maximumDate = newMaxDate
+    DispatchQueue.main.async { [weak self] in
+      self?.calendarView.reloadData()
+    }
+  }
+
+
   private func formatPrice(_ price: Double) -> String {
     let thousands = NSNumber(value: Int(round(price / 1000.0)))
     let formatter = NumberFormatter()

@@ -52,6 +52,17 @@ final class LunarDatePickerCoordinator {
     currentRangeController?.updatePrices(params.prices)
   }
 
+  /// Cập nhật maximumDate — delegate xuống PickerController đang hiển thị
+  func updateMaximumDate(_ maximumDate: String) {
+    let timeZone = globalConfig.flatMap { config in
+      TimeZone(secondsFromGMT: Int(config.timeZoneOffset * 3600))
+    }
+    if let maxDate = dateConverter.dateFromString(maximumDate, timeZone: timeZone) {
+      currentRangeController?.updateMaximumDate(maxDate)
+    }
+  }
+
+
   
   
   /// Cleanup method to clear all references and prevent memory leaks

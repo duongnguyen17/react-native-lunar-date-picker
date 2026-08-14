@@ -28,4 +28,12 @@ export function updatePrices(params: LDP_PriceUpdateParams): void {
   LunarDatePickerHybridObject.updatePrices(params);
 }
 
+/**
+ * Cập nhật maximumDate khi calendar đang mở.
+ * Thường dùng trong callback onSelectFromDate để giới hạn khoảng ngày có thể chọn (ví dụ: tối đa 30 ngày tính từ from date).
+ */
+export function updateMaximumDate(maximumDate: string): void {
+  LunarDatePickerHybridObject.updateMaximumDate(maximumDate);
+}
+
 export * from './type';

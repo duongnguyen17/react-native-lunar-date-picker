@@ -2,6 +2,7 @@ import type { LDP_Range } from '@2security/lunar-date-picker';
 import {
   configure,
   pickDate,
+  updateMaximumDate,
   updatePrices,
 } from '@2security/lunar-date-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -186,6 +187,75 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTheme, range, handleMounted, handleSelectFromDate]);
 
+  const openPickerDynamicMaxDate = useCallback(() => {
+    setPriceMode('none');
+    pickDate({
+      theme: currentTheme,
+      language: 'vi',
+      title: 'Chọn ngày (Max 30 ngày từ from-date)',
+      notice:
+        'Lưu ý: Khi chọn xong ngày đi, ngày về chỉ được chọn tối đa trong vòng 30 ngày.',
+      mode: 'range',
+      ...buildMinMax(),
+      initialValue: buildInitialValue(),
+      onSelectFromDate: (startDate: string) => {
+        console.log(`✈️ onSelectFromDate (Dynamic Max Date): ${startDate}`);
+        const fromD = parseDate(startDate);
+        const maxD = new Date(
+          fromD.getFullYear(),
+          fromD.getMonth(),
+          fromD.getDate() + 30
+        );
+        const newMaxStr = formatDate(maxD);
+        console.log(`🎯 Updating maximumDate to: ${newMaxStr}`);
+        updateMaximumDate(newMaxStr);
+      },
+      onDone: handleDone,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTheme, range]);
+
+  const openPickerCombinedDemo = useCallback(() => {
+    setPriceMode('lazy');
+    pickDate({
+      theme: currentTheme,
+      language: 'vi',
+      title: 'Kết hợp: Load Giá + MaxDate 30 ngày',
+      notice:
+        'Lưu ý: Khi chọn ngày đi, giá vé cho 30 ngày tiếp theo sẽ được tải và maximumDate tự động giới hạn 30 ngày.',
+      mode: 'range',
+      ...buildMinMax(),
+      initialValue: buildInitialValue(),
+      prices: [], // hiển thị price area
+      onMounted: handleMounted,
+      onSelectFromDate: async (startDate: string) => {
+        console.log(`✈️ onSelectFromDate (Combined Demo): ${startDate}`);
+        const fromD = parseDate(startDate);
+        const maxD = new Date(
+          fromD.getFullYear(),
+          fromD.getMonth(),
+          fromD.getDate() + 30
+        );
+        const newMaxStr = formatDate(maxD);
+
+        // 1. Cập nhật maximumDate (giới hạn 30 ngày)
+        console.log(`🎯 Updating maximumDate to: ${newMaxStr}`);
+        updateMaximumDate(newMaxStr);
+
+        // 2. Cập nhật giá vé từ startDate đến newMaxStr
+        try {
+          console.log(`💰 Fetching prices from ${startDate} to ${newMaxStr}`);
+          const prices = await fetchPricesForRange(startDate, newMaxStr);
+          updatePrices({ prices });
+        } catch (e) {
+          console.error('Failed to load prices for combined demo:', e);
+        }
+      },
+      onDone: handleDone,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTheme, range, handleMounted]);
+
   const openSinglePicker = useCallback(() => {
     const today = new Date();
     const lastYear = new Date();
@@ -332,6 +402,30 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           </Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={[styles.button, styles.buttonOrange]}
+          onPress={openPickerDynamicMaxDate}
+        >
+          <Text style={styles.buttonText}>
+            🔒 Dynamic Max Date (Max 30 ngày)
+          </Text>
+          <Text style={styles.buttonSubtext}>
+            onSelectFromDate → updateMaximumDate(from + 30 ngày)
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.buttonTeal]}
+          onPress={openPickerCombinedDemo}
+        >
+          <Text style={styles.buttonText}>
+            🔥 Kết hợp: Update Giá + Update MaximumDate
+          </Text>
+          <Text style={styles.buttonSubtext}>
+            onSelectFromDate → updateMaximumDate (30 ngày) + updatePrices
+          </Text>
+        </TouchableOpacity>
+
         {/* Section: Single picker */}
         <Text style={[styles.sectionTitle, { color: textColor }]}>
           Single Picker
@@ -440,6 +534,12 @@ const styles = StyleSheet.create({
   },
   buttonGreen: {
     backgroundColor: '#16a34a',
+  },
+  buttonOrange: {
+    backgroundColor: '#ea580c',
+  },
+  buttonTeal: {
+    backgroundColor: '#0d9488',
   },
   buttonPurple: {
     backgroundColor: '#7C3AED',

@@ -61,6 +61,19 @@ class LunarDatePickerCoordinator(
     }
   }
 
+  /**
+   * Cập nhật maximumDate — merge vào fragment đang hiển thị nếu có
+   */
+  fun updateMaximumDate(maximumDateString: String) {
+    val fragment = currentFragment ?: return
+    val timeZone = getConfiguredTimeZone()
+    val maxDate = dateConverter.dateFromString(maximumDateString, timeZone) ?: return
+    UiThreadUtil.runOnUiThread {
+      fragment.updateMaximumDate(maxDate)
+    }
+  }
+
+
   suspend fun present(params: LDP_PresentParams) {
     try {
       val activity = getCurrentActivity()

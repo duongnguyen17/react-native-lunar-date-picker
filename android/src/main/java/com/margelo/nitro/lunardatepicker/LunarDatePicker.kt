@@ -89,6 +89,19 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
     }
   }
 
+  /**
+   * Cập nhật maximumDate khi calendar đang mở
+   */
+  override fun updateMaximumDate(maximumDate: String) {
+    try {
+      coordinator.updateMaximumDate(maximumDate)
+      Log.d(TAG, "Maximum date updated successfully")
+    } catch (e: Exception) {
+      Log.w(TAG, "Failed to update maximum date: ${e.message}", e)
+    }
+  }
+
+
   // MARK: - Private Methods
 
   /**

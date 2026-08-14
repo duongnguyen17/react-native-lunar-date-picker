@@ -72,6 +72,12 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
     coordinator.updatePrices(with: params)
   }
 
+  /// Cập nhật maximumDate khi calendar đang mở
+  public func updateMaximumDate(maximumDate: String) throws {
+    coordinator.updateMaximumDate(maximumDate)
+  }
+
+
   // MARK: - Private Methods
 
   /// Validates the configuration parameters

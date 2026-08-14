@@ -623,6 +623,16 @@ class LunarDatePickerFragment : DialogFragment() {
     }
 
     /**
+     * Cập nhật maximumDate và notify calendar rebind.
+     * Có thể gọi khi calendar đang hiển thị.
+     */
+    fun updateMaximumDate(newMaxDate: LocalDate) {
+        maximumDate = newMaxDate
+        calendarView.notifyCalendarChanged()
+    }
+
+
+    /**
      * Fire onMounted sau khi dialog fully shown.
      * startDate = minimumDate hoặc năm hiện tại - yearRangeOffset
      * endDate = maximumDate hoặc năm hiện tại + yearRangeOffset

@@ -147,7 +147,12 @@ Display the date picker with specified configuration.
 
 Update the prices displayed on the calendar. This can be called while the picker is open to update the UI immediately (e.g., when lazy-loading prices for new months).
 
+#### `updateMaximumDate(maximumDate: string): void`
+
+Update the maximum selectable date dynamically while the calendar is open. Useful in `onSelectFromDate` to restrict the selectable range (e.g., maximum 30 days from the selected `from` date).
+
 ### Types
+
 
 #### `LDP_PriceUpdateParams`
 
