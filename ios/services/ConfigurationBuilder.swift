@@ -35,10 +35,8 @@ final class ConfigurationBuilder: ConfigurationProviding {
       applyLanguage(language, to: &pickerConfig)
     }
 
-    // Apply timezone if available
-    if let timeZoneOffset = globalConfig?.timeZoneOffset {
-      applyTimeZone(timeZoneOffset, to: &pickerConfig)
-    }
+    // Use the configured fixed offset, or the device timezone by default.
+    applyTimeZone(globalConfig?.timeZoneOffset, to: &pickerConfig)
 
     // Apply year range if available
     if let yearRangeOffset = globalConfig?.yearRangeOffset {
@@ -118,9 +116,8 @@ final class ConfigurationBuilder: ConfigurationProviding {
     config.calendar.locale = Locale(identifier: language.locale)
   }
 
-  func applyTimeZone(_ offset: Double, to config: inout PickerConfig) {
-    config.calendar.timeZone =
-      TimeZone(secondsFromGMT: Int(offset * 3600)) ?? TimeZone.current
+  func applyTimeZone(_ offset: Double?, to config: inout PickerConfig) {
+    config.calendar.timeZone = PickerTimeZoneResolver.resolve(offsetHours: offset)
   }
 
   func applyYearRange(_ offset: Double, to config: inout PickerConfig) {

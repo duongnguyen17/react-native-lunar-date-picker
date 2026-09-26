@@ -21,7 +21,16 @@ import { PICKER_CONFIG } from '../constants';
 import { fetchPricesForRange } from '../services/mockApi';
 import type { DateRange } from '../types';
 import type { RootStackParamList } from '../types/navigation';
-import { formatDate, generateSamplePrices, parseDate } from '../utils';
+import {
+  addYearsToDateString,
+  formatDate,
+  formatDateInTimeZone,
+  formatTimeInTimeZone,
+  formatUtcOffset,
+  generateSamplePrices,
+  getDatePartsInTimeZone,
+  parseDate,
+} from '../utils';
 
 export type HomeScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -30,11 +39,25 @@ export type HomeScreenProps = NativeStackScreenProps<
 
 type PriceMode = 'none' | 'preloaded' | 'lazy';
 
+const TIME_ZONE_OPTIONS: Array<{ label: string; offsetHours?: number }> = [
+  { label: 'Thiết bị', offsetHours: undefined },
+  { label: 'Việt Nam · UTC+07:00', offsetHours: 7 },
+  { label: 'Ấn Độ · UTC+05:30', offsetHours: 5.5 },
+  { label: 'Nepal · UTC+05:45', offsetHours: 5.75 },
+  { label: 'Trung Quốc · UTC+08:00', offsetHours: 8 },
+  { label: 'UTC', offsetHours: 0 },
+  { label: 'UTC−04:00', offsetHours: -4 },
+  { label: 'UTC−07:00', offsetHours: -7 },
+];
+
 export function HomeScreen({ navigation }: HomeScreenProps) {
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');
   const [range, setRange] = useState<DateRange | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [priceMode, setPriceMode] = useState<PriceMode>('none');
+  const [selectedTimeZoneOffset, setSelectedTimeZoneOffset] = useState<
+    number | undefined
+  >(PICKER_CONFIG.timeZoneOffset);
 
   // Track đã load tháng nào rồi (tránh gọi API 2 lần)
   const loadedMonths = useRef<Set<string>>(new Set());
@@ -43,11 +66,17 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const [showLunarDate, setShowLunarDate] = useState(true);
 
   useEffect(() => {
-    configure({
+    const config = {
       ...PICKER_CONFIG,
       showLunarDate,
-    });
-  }, [showLunarDate]);
+    };
+    if (selectedTimeZoneOffset === undefined) {
+      delete config.timeZoneOffset;
+    } else {
+      config.timeZoneOffset = selectedTimeZoneOffset;
+    }
+    configure(config);
+  }, [selectedTimeZoneOffset, showLunarDate]);
 
   const toggleTheme = useCallback(() => {
     setCurrentTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
@@ -61,12 +90,13 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   // Helpers
   // ---------------------------------------------------------------------------
   const buildMinMax = () => {
-    const today = new Date();
-    const nextYear = new Date();
-    nextYear.setFullYear(today.getFullYear() + 1);
+    const minimumDate = formatDateInTimeZone(
+      new Date(),
+      selectedTimeZoneOffset
+    );
     return {
-      minimumDate: formatDate(today),
-      maximumDate: formatDate(nextYear),
+      minimumDate,
+      maximumDate: addYearsToDateString(minimumDate, 1),
     };
   };
 
@@ -146,11 +176,11 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range]);
+  }, [currentTheme, range, selectedTimeZoneOffset]);
 
   const openPickerPreloaded = useCallback(() => {
     setPriceMode('preloaded');
-    const prices = generateSamplePrices();
+    const prices = generateSamplePrices(selectedTimeZoneOffset);
     pickDate({
       theme: currentTheme,
       language: 'vi',
@@ -162,7 +192,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range]);
+  }, [currentTheme, range, selectedTimeZoneOffset]);
 
   const openPickerLazyLoad = useCallback(() => {
     setPriceMode('lazy');
@@ -185,7 +215,13 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range, handleMounted, handleSelectFromDate]);
+  }, [
+    currentTheme,
+    range,
+    handleMounted,
+    handleSelectFromDate,
+    selectedTimeZoneOffset,
+  ]);
 
   const openPickerDynamicMaxDate = useCallback(() => {
     setPriceMode('none');
@@ -213,7 +249,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range]);
+  }, [currentTheme, range, selectedTimeZoneOffset]);
 
   const openPickerCombinedDemo = useCallback(() => {
     setPriceMode('lazy');
@@ -254,26 +290,27 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range, handleMounted]);
+  }, [currentTheme, range, handleMounted, selectedTimeZoneOffset]);
 
   const openSinglePicker = useCallback(() => {
-    const today = new Date();
-    const lastYear = new Date();
-    lastYear.setFullYear(today.getFullYear() - 1);
+    const maximumDate = formatDateInTimeZone(
+      new Date(),
+      selectedTimeZoneOffset
+    );
 
     pickDate({
       theme: currentTheme,
       language: 'vi',
       title: 'Chọn ngày (Single)',
       mode: 'single',
-      minimumDate: formatDate(lastYear),
-      maximumDate: formatDate(today),
+      minimumDate: addYearsToDateString(maximumDate, -1),
+      maximumDate,
       onDone: (result) => {
         console.log('✅ Single:', result);
         setRange({ from: parseDate(result.from), to: undefined });
       },
     });
-  }, [currentTheme]);
+  }, [currentTheme, selectedTimeZoneOffset]);
 
   // ---------------------------------------------------------------------------
   // Periodic price update demo for preloaded mode
@@ -286,10 +323,14 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     const run = async () => {
       try {
         const today = new Date();
-        const prices = await fetchPricesForRange(
-          formatDate(today),
-          formatDate(new Date(today.getFullYear(), today.getMonth() + 2, 0))
+        const startDate = formatDateInTimeZone(today, selectedTimeZoneOffset);
+        const { month, year } = getDatePartsInTimeZone(
+          today,
+          selectedTimeZoneOffset
         );
+        const lastDayNextMonth = new Date(Date.UTC(year, month + 1, 0));
+        const endDate = formatDateInTimeZone(lastDayNextMonth, 0);
+        const prices = await fetchPricesForRange(startDate, endDate);
         if (mounted) {
           updatePrices({ prices });
         }
@@ -302,7 +343,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     return () => {
       mounted = false;
     };
-  }, [priceMode]);
+  }, [priceMode, selectedTimeZoneOffset]);
 
   // ---------------------------------------------------------------------------
   // Render
@@ -362,10 +403,60 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           )}
         </View>
 
+        {/* Timezone selection */}
+        <View style={[styles.timeZoneCard, { backgroundColor: cardBg }]}>
+          <Text style={[styles.timeZoneTitle, { color: textColor }]}>
+            🌍 Múi giờ thử nghiệm
+          </Text>
+          <Text style={[styles.timeZoneInfo, { color: textColor }]}>
+            Đang dùng:{' '}
+            {selectedTimeZoneOffset === undefined
+              ? 'múi giờ thiết bị'
+              : formatUtcOffset(selectedTimeZoneOffset)}
+          </Text>
+          <Text style={[styles.timeZoneInfo, { color: textColor }]}>
+            Giờ hiện tại:{' '}
+            {formatTimeInTimeZone(new Date(), selectedTimeZoneOffset)} ·{' '}
+            {formatDateInTimeZone(new Date(), selectedTimeZoneOffset)}
+          </Text>
+          <Text style={[styles.timeZoneLabel, { color: textColor }]}>
+            Chọn múi giờ:
+          </Text>
+          <View style={styles.timeZoneOptions}>
+            {TIME_ZONE_OPTIONS.map((option) => {
+              const isSelected = selectedTimeZoneOffset === option.offsetHours;
+              return (
+                <TouchableOpacity
+                  key={option.label}
+                  style={[
+                    styles.timeZoneOption,
+                    isSelected && styles.timeZoneOptionActive,
+                  ]}
+                  onPress={() => setSelectedTimeZoneOffset(option.offsetHours)}
+                >
+                  <Text
+                    style={[
+                      styles.timeZoneOptionText,
+                      isSelected && styles.timeZoneOptionTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
         {/* Navigate to FormSheet */}
         <TouchableOpacity
           style={styles.navigateButton}
-          onPress={() => navigation.navigate('FormSheet', { currentTheme })}
+          onPress={() =>
+            navigation.navigate('FormSheet', {
+              currentTheme,
+              selectedTimeZoneOffset,
+            })
+          }
         >
           <Text style={styles.navigateButtonText}>📋 Mở FormSheet Demo</Text>
         </TouchableOpacity>
@@ -482,6 +573,49 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+  },
+  timeZoneCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  timeZoneTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  timeZoneInfo: {
+    fontSize: 13,
+    lineHeight: 20,
+    opacity: 0.85,
+  },
+  timeZoneLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  timeZoneOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  timeZoneOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: '#e5e7eb',
+  },
+  timeZoneOptionActive: {
+    backgroundColor: '#007AFF',
+  },
+  timeZoneOptionText: {
+    color: '#374151',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  timeZoneOptionTextActive: {
+    color: '#fff',
   },
   cardLabel: {
     fontSize: 12,

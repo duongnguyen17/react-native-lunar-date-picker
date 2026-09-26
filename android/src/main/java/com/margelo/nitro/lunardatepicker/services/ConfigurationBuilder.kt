@@ -44,7 +44,6 @@ class ConfigurationBuilder {
       config.languages[params.language]?.let { language ->
         pickerConfig = applyLanguage(language, pickerConfig)
       }
-      pickerConfig = applyTimeZone(config.timeZoneOffset, pickerConfig)
       pickerConfig = applyYearRange(config.yearRangeOffset, pickerConfig)
       // Map showSubmitButton from global config
       pickerConfig = pickerConfig.copy(
@@ -56,6 +55,8 @@ class ConfigurationBuilder {
         )
       )
     }
+
+    pickerConfig = applyTimeZone(globalConfig?.timeZoneOffset, pickerConfig)
 
     // Force showSubmitButton to false in single mode
     if (params.mode == LDP_Mode.SINGLE) {
@@ -113,11 +114,10 @@ class ConfigurationBuilder {
     )
   }
 
-  private fun applyTimeZone(offset: Double, config: PickerConfig): PickerConfig {
-    val timeZone = TimeZone.getTimeZone("GMT${if (offset >= 0) "+" else ""}${offset.toInt()}")
+  private fun applyTimeZone(offset: Double?, config: PickerConfig): PickerConfig {
     return config.copy(
       calendar = config.calendar.copy(
-        timeZone = timeZone
+        timeZone = PickerTimeZoneResolver.resolve(offset)
       )
     )
   }

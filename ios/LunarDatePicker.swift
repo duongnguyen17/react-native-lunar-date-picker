@@ -122,9 +122,7 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
   /// - Parameter params: Presentation parameters to validate
   /// - Throws: LunarDatePickerError.invalidConfiguration if validation fails
   private func validatePresentationParams(_ params: LDP_PresentParams) throws {
-    let timeZone = currentConfig.flatMap { config in
-      TimeZone(secondsFromGMT: Int(config.timeZoneOffset * 3600))
-    }
+    let timeZone = PickerTimeZoneResolver.resolve(offsetHours: currentConfig?.timeZoneOffset)
 
     func parse(_ value: String) throws -> Date {
       guard let date = dateConverter.dateFromString(value, timeZone: timeZone) else {

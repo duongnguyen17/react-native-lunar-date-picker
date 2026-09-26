@@ -19,7 +19,7 @@ func jdFromDate(day: Int, month: Int, year: Int) -> Int {
       - Constants.Julian.dayConstantOld : jd
 }
 
-func getNewMoonDay(k: Int, timeZone: Int) -> Int {
+func getNewMoonDay(k: Int, timeZone: Double) -> Int {
   let T = Double(k) / 1236.85
   let T2 = T * T
   let T3 = T2 * T
@@ -55,11 +55,11 @@ func getNewMoonDay(k: Int, timeZone: Int) -> Int {
     : -0.000278 + 0.000265 * T + 0.000262 * T2
 
   let JdNew = Jd1 + C1 - deltaT
-  return Int(floor(JdNew + 0.5 + Double(timeZone) / 24))
+  return Int(floor(JdNew + 0.5 + timeZone / 24))
 }
 
-func getSunLongitude(jdn: Int, timeZone: Int) -> Int {
-  let T = (Double(jdn) - 2451545.5 - Double(timeZone) / 24) / 36525
+func getSunLongitude(jdn: Int, timeZone: Double) -> Int {
+  let T = (Double(jdn) - 2451545.5 - timeZone / 24) / 36525
   let T2 = T * T
   let dr = Double.pi / 180
   let M = 357.52910 + 35999.05030 * T - 0.0001559 * T2 - 0.00000048 * T * T2
@@ -74,7 +74,7 @@ func getSunLongitude(jdn: Int, timeZone: Int) -> Int {
   return Int(floor(L / Double.pi * 6))
 }
 
-func getLunarMonth11(year: Int, timeZone: Int, calendar: Calendar) -> Int {
+func getLunarMonth11(year: Int, timeZone: Double, calendar: Calendar) -> Int {
   let comps = DateComponents(year: year, month: 12, day: 31)
   let date = calendar.date(from: comps) ?? Date()
   let d = calendar.dateComponents([.day, .month, .year], from: date)
@@ -87,7 +87,7 @@ func getLunarMonth11(year: Int, timeZone: Int, calendar: Calendar) -> Int {
   return nm
 }
 
-func getLeapMonthOffset(a11: Int, timeZone: Int) -> Int {
+func getLeapMonthOffset(a11: Int, timeZone: Double) -> Int {
   let k = Int(floor((Double(a11) - 2415021.076998695) / 29.530588853 + 0.5))
   var last = getSunLongitude(
     jdn: getNewMoonDay(k: k + 1, timeZone: timeZone),
@@ -106,7 +106,7 @@ func getLeapMonthOffset(a11: Int, timeZone: Int) -> Int {
 
 func calculateLunarDate(
   dayNumber: Int,
-  timeZone: Int,
+  timeZone: Double,
   calendar: Calendar,
   year: Int
 ) -> (Int, Int, Int) {
@@ -163,15 +163,16 @@ func calculateLunarDate(
 public func getVietnameseLunarDate(_ date: Date, _ timeZone: TimeZone)
   -> LunarDate
 {
-  let calendar = Calendar(identifier: .gregorian)
+  var calendar = Calendar(identifier: .gregorian)
+  calendar.timeZone = timeZone
   let comps = calendar.dateComponents([.day, .month, .year], from: date)
   let day = comps.day ?? 0
   let month = comps.month ?? 0
   let year = comps.year ?? 0
   let dayNumber = jdFromDate(day: day, month: month, year: year)
 
-  // Chuyển đổi TimeZone sang Int (offset giờ)
-  let timeZoneOffset = timeZone.secondsFromGMT(for: date) / 3600
+  // Giữ độ chính xác đến từng giây cho các múi giờ lệch một phần giờ.
+  let timeZoneOffset = Double(timeZone.secondsFromGMT(for: date)) / 3600.0
 
   let (lunarYear, lunarMonth, lunarDay) = calculateLunarDate(
     dayNumber: dayNumber,

@@ -55,7 +55,6 @@ class ConfigurationCacheService {
           config = applyTemplate(config, template)
         }
       }
-      config = applyTimeZone(globalConf.timeZoneOffset, config)
       config = applyYearRange(globalConf.yearRangeOffset, config)
       config = config.copy(
         controller = config.controller.copy(
@@ -66,6 +65,8 @@ class ConfigurationCacheService {
         )
       )
     }
+
+    config = applyTimeZone(globalConfig?.timeZoneOffset, config)
 
     // Force showSubmitButton to false in single mode
     if (params.mode == LDP_Mode.SINGLE) {
@@ -188,9 +189,12 @@ class ConfigurationCacheService {
     return color
   }
 
-  private fun applyTimeZone(offset: Double, config: PickerConfig): PickerConfig {
-    val timeZone = java.util.TimeZone.getTimeZone("GMT${if (offset >= 0) "+" else ""}${offset.toInt()}")
-    return config.copy(calendar = config.calendar.copy(timeZone = timeZone))
+  private fun applyTimeZone(offset: Double?, config: PickerConfig): PickerConfig {
+    return config.copy(
+      calendar = config.calendar.copy(
+        timeZone = PickerTimeZoneResolver.resolve(offset)
+      )
+    )
   }
 
   private fun applyYearRange(offset: Double, config: PickerConfig): PickerConfig {
@@ -203,8 +207,8 @@ class ConfigurationCacheService {
     keyBuilder.append(params.language).append("|")
     keyBuilder.append(params.title).append("|")
     keyBuilder.append(params.mode.name).append("|")
+    keyBuilder.append(PickerTimeZoneResolver.resolve(globalConfig?.timeZoneOffset).id).append("|")
     globalConfig?.let {
-      keyBuilder.append(it.timeZoneOffset).append("|")
       keyBuilder.append(it.yearRangeOffset).append("|")
       keyBuilder.append(it.showSubmitButton).append("|")
       keyBuilder.append(it.showLunarDate).append("|")

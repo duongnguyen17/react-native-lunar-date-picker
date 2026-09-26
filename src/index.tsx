@@ -14,7 +14,7 @@ export function pickDate(params: LDP_PresentParams): void {
 }
 
 /**
- * bắt buộc phải config nhé
+ * timeZoneOffset tùy chọn; bỏ qua trường này để dùng múi giờ thiết bị.
  */
 export function configure(config: LDP_ConfigParams): void {
   LunarDatePickerHybridObject.configure(config);

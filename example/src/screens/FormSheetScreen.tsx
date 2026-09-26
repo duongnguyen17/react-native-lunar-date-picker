@@ -5,7 +5,13 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { DateRange } from '../types';
 import type { RootStackParamList } from '../types/navigation';
-import { formatDate, generateSamplePrices, parseDate } from '../utils';
+import {
+  addYearsToDateString,
+  formatDate,
+  formatDateInTimeZone,
+  generateSamplePrices,
+  parseDate,
+} from '../utils';
 
 export type FormSheetScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -13,7 +19,7 @@ export type FormSheetScreenProps = NativeStackScreenProps<
 >;
 
 export function FormSheetScreen({ route }: FormSheetScreenProps) {
-  const { currentTheme } = route.params;
+  const { currentTheme, selectedTimeZoneOffset } = route.params;
   const [range, setRange] = useState<DateRange | undefined>(undefined);
 
   const buildInitialValue = (): LDP_Range | undefined => {
@@ -31,41 +37,45 @@ export function FormSheetScreen({ route }: FormSheetScreenProps) {
   };
 
   const openBasic = useCallback(() => {
-    const today = new Date();
-    const nextYear = new Date();
-    nextYear.setFullYear(today.getFullYear() + 1);
+    const minimumDate = formatDateInTimeZone(
+      new Date(),
+      selectedTimeZoneOffset
+    );
+    const maximumDate = addYearsToDateString(minimumDate, 1);
 
     pickDate({
       theme: currentTheme,
       language: 'vi',
       title: 'Chọn ngày (Range)',
       mode: 'range',
-      minimumDate: formatDate(today),
-      maximumDate: formatDate(nextYear),
+      minimumDate,
+      maximumDate,
       initialValue: buildInitialValue(),
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range]);
+  }, [currentTheme, range, selectedTimeZoneOffset]);
 
   const openWithPrices = useCallback(() => {
-    const today = new Date();
-    const nextYear = new Date();
-    nextYear.setFullYear(today.getFullYear() + 1);
+    const minimumDate = formatDateInTimeZone(
+      new Date(),
+      selectedTimeZoneOffset
+    );
+    const maximumDate = addYearsToDateString(minimumDate, 1);
 
     pickDate({
       theme: currentTheme,
       language: 'vi',
       title: 'Chọn ngày (Có giá)',
       mode: 'range',
-      minimumDate: formatDate(today),
-      maximumDate: formatDate(nextYear),
+      minimumDate,
+      maximumDate,
       initialValue: buildInitialValue(),
-      prices: generateSamplePrices(),
+      prices: generateSamplePrices(selectedTimeZoneOffset),
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range]);
+  }, [currentTheme, range, selectedTimeZoneOffset]);
 
   const formatDateRange = useCallback(() => {
     if (!range) return 'Chưa chọn ngày';

@@ -54,9 +54,8 @@ final class LunarDatePickerCoordinator {
 
   /// Cập nhật maximumDate — delegate xuống PickerController đang hiển thị
   func updateMaximumDate(_ maximumDate: String) {
-    let timeZone = globalConfig.flatMap { config in
-      TimeZone(secondsFromGMT: Int(config.timeZoneOffset * 3600))
-    }
+    let timeZone = currentRangeController?.config.calendar.timeZone
+      ?? PickerTimeZoneResolver.resolve(offsetHours: globalConfig?.timeZoneOffset)
     if let maxDate = dateConverter.dateFromString(maximumDate, timeZone: timeZone) {
       currentRangeController?.updateMaximumDate(maxDate)
     }
@@ -146,10 +145,7 @@ final class LunarDatePickerCoordinator {
         let self = self
       else { return }
 
-      // Get timezone from config, fallback to current timezone
-      let timeZone = self.globalConfig.flatMap { config in
-        TimeZone(secondsFromGMT: Int(config.timeZoneOffset * 3600))
-      }
+      let timeZone = rangeController.config.calendar.timeZone
 
       let isSingle = rangeController.config.controller.isSingleMode
       let result: LDP_Range

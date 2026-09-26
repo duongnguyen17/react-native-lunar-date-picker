@@ -14,6 +14,6 @@ protocol ConfigurationProviding {
   ) -> PickerConfig
   func applyTheme(_ theme: LDP_CustomStyle, to config: inout PickerConfig)
   func applyLanguage(_ language: LDP_CustomLanguage, to config: inout PickerConfig)
-  func applyTimeZone(_ offset: Double, to config: inout PickerConfig)
+  func applyTimeZone(_ offset: Double?, to config: inout PickerConfig)
   func applyYearRange(_ offset: Double, to config: inout PickerConfig)
 }

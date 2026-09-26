@@ -12,6 +12,7 @@ import com.margelo.nitro.lunardatepicker.constants.DataConstants
 import com.margelo.nitro.lunardatepicker.exceptions.LunarDatePickerException
 import com.margelo.nitro.lunardatepicker.models.PickerConfig
 import com.margelo.nitro.lunardatepicker.services.ConfigurationBuilder
+import com.margelo.nitro.lunardatepicker.services.PickerTimeZoneResolver
 import com.margelo.nitro.lunardatepicker.ui.fragments.LunarDatePickerFragment
 import com.margelo.nitro.lunardatepicker.utils.DateConverter
 import com.margelo.nitro.lunardatepicker.utils.toZoneId
@@ -42,11 +43,8 @@ class LunarDatePickerCoordinator(
     Log.d(TAG, "Global configuration applied")
   }
 
-  fun getConfiguredTimeZone(): java.time.ZoneId? {
-    return globalConfig?.let { config ->
-      val timeZone = java.util.TimeZone.getTimeZone("GMT${if (config.timeZoneOffset >= 0) "+" else ""}${config.timeZoneOffset.toInt()}")
-      timeZone.toZoneId()
-    }
+  fun getConfiguredTimeZone(): java.time.ZoneId {
+    return PickerTimeZoneResolver.resolve(globalConfig?.timeZoneOffset).toZoneId()
   }
 
   /**

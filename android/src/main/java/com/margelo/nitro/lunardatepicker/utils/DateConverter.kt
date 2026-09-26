@@ -67,11 +67,11 @@ class DateConverter {
         val year = date.year
 
         val dayNumber = jdFromDate(day, month, year)
-        val timeZoneOffset = timeZone.rules.getOffset(date.atStartOfDay()).totalSeconds / 3600
+        val timeZoneOffset = date.atStartOfDay(timeZone).offset.totalSeconds / 3600.0
 
         val (lunarYear, lunarMonth, lunarDay) = calculateLunarDate(
             dayNumber,
-            timeZoneOffset.toInt(),
+            timeZoneOffset,
             date,
             year
         )
@@ -104,7 +104,7 @@ class DateConverter {
         }
     }
 
-    private fun getNewMoonDay(k: Int, timeZone: Int): Int {
+    private fun getNewMoonDay(k: Int, timeZone: Double): Int {
         val T = k.toDouble() / 1236.85
         val T2 = T * T
         val T3 = T2 * T
@@ -137,11 +137,11 @@ class DateConverter {
         }
 
         val JdNew = Jd1 + C1 - deltaT
-        return floor(JdNew + 0.5 + timeZone.toDouble() / 24).toInt()
+        return floor(JdNew + 0.5 + timeZone / 24).toInt()
     }
 
-    private fun getSunLongitude(jdn: Int, timeZone: Int): Int {
-        val T = (jdn.toDouble() - 2451545.5 - timeZone.toDouble() / 24) / 36525
+    private fun getSunLongitude(jdn: Int, timeZone: Double): Int {
+        val T = (jdn.toDouble() - 2451545.5 - timeZone / 24) / 36525
         val T2 = T * T
         val dr = PI / 180
         val M = 357.52910 + 35999.05030 * T - 0.0001559 * T2 - 0.00000048 * T * T2
@@ -156,7 +156,7 @@ class DateConverter {
         return floor(L / PI * 6).toInt()
     }
 
-    private fun getLunarMonth11(year: Int, timeZone: Int, date: LocalDate): Int {
+    private fun getLunarMonth11(year: Int, timeZone: Double, date: LocalDate): Int {
         val endOfYear = LocalDate.of(year, 12, 31)
         val d = endOfYear.dayOfMonth
         val m = endOfYear.monthValue
@@ -171,7 +171,7 @@ class DateConverter {
         return nm
     }
 
-    private fun getLeapMonthOffset(a11: Int, timeZone: Int): Int {
+    private fun getLeapMonthOffset(a11: Int, timeZone: Double): Int {
         val k = floor((a11.toDouble() - 2415021.076998695) / 29.530588853 + 0.5).toInt()
         var last = getSunLongitude(getNewMoonDay(k + 1, timeZone), timeZone)
         for (i in 2..14) {
@@ -184,7 +184,7 @@ class DateConverter {
 
     private fun calculateLunarDate(
         dayNumber: Int,
-        timeZone: Int,
+        timeZone: Double,
         date: LocalDate,
         year: Int
     ): Triple<Int, Int, Int> {

@@ -134,7 +134,8 @@ export type LDP_ConfigParams = {
   themes: Record<string, LDP_CustomStyle>;
   languages: Record<string, LDP_CustomLanguage>;
   yearRangeOffset: number;
-  timeZoneOffset: number;
+  /** Fixed offset in hours; omit to use the device timezone. Fractional hours are supported. */
+  timeZoneOffset?: number;
 
   showLunarDate: boolean;
 

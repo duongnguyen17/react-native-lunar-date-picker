@@ -115,7 +115,7 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
       val configuredTimeZone = coordinator.getConfiguredTimeZone()
 
       // Preload lunar date cache for faster calculations
-      MemoryOptimizer.preloadLunarDateCache(dateConverter, configuredTimeZone ?: java.time.ZoneId.systemDefault())
+      MemoryOptimizer.preloadLunarDateCache(dateConverter, configuredTimeZone)
 
       Log.d(TAG, "Performance optimizations initialized")
     } catch (e: Exception) {

@@ -206,7 +206,7 @@ interface LDP_ConfigParams {
   themes: Record<string, LDP_CustomStyle>; // Theme configurations
   languages: Record<string, LDP_CustomLanguage>; // Language configurations
   yearRangeOffset: number; // Year range offset for calendar
-  timeZoneOffset: number; // Timezone offset (e.g., 7 for GMT+7)
+  timeZoneOffset?: number; // Fixed UTC offset in hours; omit to use the device timezone
   showSubmitButton: boolean; // Show/hide submit button on header
 }
 ```
@@ -253,20 +253,19 @@ type LDP_Mode = 'range' | 'single';
 
 ### Timezone Configuration
 
-The picker properly handles timezones for accurate date operations and lunar calendar calculations:
+The picker uses one timezone consistently for date selection and lunar calculations. `timeZoneOffset` is a fixed UTC offset in hours; fractional offsets such as `5.5` are supported. Omit it to use the device timezone, including its daylight-saving rules.
 
 ```javascript
 configure({
-  timeZoneOffset: 7, // GMT+7 for Vietnam
-  // All date formatting, lunar calculations will use this timezone
+  timeZoneOffset: 5.5, // Optional fixed offset; 7 is GMT+7 for Vietnam
 });
 
-// Dates will be formatted according to the configured timezone
+// Dates use the configured fixed offset, or the device timezone when omitted.
 pickDate({
-  minimumDate: '01/01/2024', // DD/MM/YYYY interpreted in GMT+7
-  maximumDate: '31/12/2024', // DD/MM/YYYY interpreted in GMT+7
+  minimumDate: '01/01/2024', // DD/MM/YYYY interpreted in the configured timezone
+  maximumDate: '31/12/2024', // DD/MM/YYYY interpreted in the configured timezone
   onDone: (result) => {
-    // result.from and result.to are in DD/MM/YYYY format using GMT+7
+    // result.from and result.to are in DD/MM/YYYY format using the configured timezone
     console.log('Selected:', result);
   },
 });

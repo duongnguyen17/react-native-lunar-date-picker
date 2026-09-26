@@ -44,8 +44,9 @@ final class PickerPresenter {
     let controller = controllerFactory.makeRangePickerController(
       config: pickerConfig
     )
-    configureCommonDateProperties(controller, params: params, globalConfig: globalConfig)
-    configureInitialRangeValue(controller, params: params, globalConfig: globalConfig)
+    let timeZone = pickerConfig.calendar.timeZone
+    configureCommonDateProperties(controller, params: params, timeZone: timeZone)
+    configureInitialRangeValue(controller, params: params, timeZone: timeZone)
     return controller
   }
 
@@ -54,13 +55,8 @@ final class PickerPresenter {
   private func configureCommonDateProperties<T: PickerValue>(
     _ controller: PickerController<T>,
     params: LDP_PresentParams,
-    globalConfig: LDP_ConfigParams?
+    timeZone: TimeZone
   ) {
-    // Get timezone from config, fallback to current timezone
-    let timeZone = globalConfig.flatMap { config in
-      TimeZone(secondsFromGMT: Int(config.timeZoneOffset * 3600))
-    }
-    
     if let maximumDate = params.maximumDate {
       controller.maximumDate = dateConverter.dateFromString(maximumDate, timeZone: timeZone)
     }
@@ -73,14 +69,9 @@ final class PickerPresenter {
   private func configureInitialRangeValue(
     _ controller: PickerController<PickerRange>,
     params: LDP_PresentParams,
-    globalConfig: LDP_ConfigParams?
+    timeZone: TimeZone
   ) {
     guard let initialValue = params.initialValue else { return }
-
-    // Get timezone from config, fallback to current timezone
-    let timeZone = globalConfig.flatMap { config in
-      TimeZone(secondsFromGMT: Int(config.timeZoneOffset * 3600))
-    }
 
     guard let fromDate = dateConverter.dateFromString(initialValue.from, timeZone: timeZone) else { return }
 
