@@ -60,6 +60,8 @@ npx expo run:android
 
 ### 1. Configure the picker (Required)
 
+Calendar weeks always run Monday through Sunday on both iOS and Android, regardless of locale. Provide each language's `weekdayNames` in that same Monday-to-Sunday order; the locale is used for month, date, and other native formatting.
+
 ```javascript
 import { configure } from '@2security/lunar-date-picker';
 
@@ -238,7 +240,7 @@ interface LDP_CustomStyle {
 
 ```typescript
 interface LDP_CustomLanguage {
-  weekdayNames: string[]; // Array of weekday names (7 items)
+  weekdayNames: string[]; // Seven weekday names ordered Monday through Sunday
   locale: string; // Locale identifier (e.g., 'vi-VN')
 }
 ```

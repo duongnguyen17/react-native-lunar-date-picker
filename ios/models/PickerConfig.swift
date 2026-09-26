@@ -13,7 +13,12 @@ public struct PickerConfig {
 
   private init() {}
 
-  public var calendar: Calendar = .current
+  public var calendar: Calendar = {
+    var calendar = Calendar.current
+    // Foundation uses 1-based weekday values: Sunday = 1, Monday = 2.
+    calendar.firstWeekday = 2
+    return calendar
+  }()
 
   public var yearRangeOffset = Constants.Calendar.yearRangeOffset
 

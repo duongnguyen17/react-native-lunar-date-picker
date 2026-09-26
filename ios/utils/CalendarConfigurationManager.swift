@@ -63,7 +63,7 @@ final class CalendarConfigurationManager {
         calendar: calendar,
         generateInDates: .forAllMonths,
         generateOutDates: .tillEndOfRow,
-        firstDayOfWeek: nil,
+        firstDayOfWeek: .monday,
         hasStrictBoundaries: true
       )
     }
@@ -100,7 +100,7 @@ final class CalendarConfigurationManager {
       calendar: calendar,
       generateInDates: .forAllMonths,
       generateOutDates: .tillEndOfRow,
-      firstDayOfWeek: nil,
+      firstDayOfWeek: .monday,
       hasStrictBoundaries: true
     )
   }

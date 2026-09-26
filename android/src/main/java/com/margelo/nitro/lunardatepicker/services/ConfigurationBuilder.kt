@@ -109,7 +109,7 @@ class ConfigurationBuilder {
         weekdayNames = language.weekdayNames
       ),
       calendar = config.calendar.copy(
-        locale = Locale(language.locale)
+        locale = Locale.forLanguageTag(language.locale.replace('_', '-'))
       )
     )
   }

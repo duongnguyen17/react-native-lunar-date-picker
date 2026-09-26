@@ -1,5 +1,7 @@
 import type { LDP_ConfigParams } from '@2security/lunar-date-picker';
 
+export type PickerLanguage = 'vi' | 'en';
+
 export const PICKER_CONFIG: LDP_ConfigParams = {
   languages: {
     vi: {

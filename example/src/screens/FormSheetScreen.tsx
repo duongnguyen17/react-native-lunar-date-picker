@@ -1,8 +1,10 @@
 import type { LDP_Range } from '@2security/lunar-date-picker';
 import { pickDate } from '@2security/lunar-date-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LanguageSelector } from '../components/LanguageSelector';
+import type { PickerLanguage } from '../constants';
 import type { DateRange } from '../types';
 import type { RootStackParamList } from '../types/navigation';
 import {
@@ -19,8 +21,18 @@ export type FormSheetScreenProps = NativeStackScreenProps<
 >;
 
 export function FormSheetScreen({ route }: FormSheetScreenProps) {
-  const { currentTheme, selectedTimeZoneOffset } = route.params;
+  const {
+    currentTheme,
+    selectedLanguage: initialLanguage,
+    selectedTimeZoneOffset,
+  } = route.params;
+  const [selectedLanguage, setSelectedLanguage] =
+    useState<PickerLanguage>(initialLanguage);
   const [range, setRange] = useState<DateRange | undefined>(undefined);
+
+  useEffect(() => {
+    setSelectedLanguage(initialLanguage);
+  }, [initialLanguage]);
 
   const buildInitialValue = (): LDP_Range | undefined => {
     if (!range) return undefined;
@@ -45,7 +57,7 @@ export function FormSheetScreen({ route }: FormSheetScreenProps) {
 
     pickDate({
       theme: currentTheme,
-      language: 'vi',
+      language: selectedLanguage,
       title: 'Chọn ngày (Range)',
       mode: 'range',
       minimumDate,
@@ -54,7 +66,7 @@ export function FormSheetScreen({ route }: FormSheetScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range, selectedTimeZoneOffset]);
+  }, [currentTheme, range, selectedLanguage, selectedTimeZoneOffset]);
 
   const openWithPrices = useCallback(() => {
     const minimumDate = formatDateInTimeZone(
@@ -65,7 +77,7 @@ export function FormSheetScreen({ route }: FormSheetScreenProps) {
 
     pickDate({
       theme: currentTheme,
-      language: 'vi',
+      language: selectedLanguage,
       title: 'Chọn ngày (Có giá)',
       mode: 'range',
       minimumDate,
@@ -75,7 +87,7 @@ export function FormSheetScreen({ route }: FormSheetScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range, selectedTimeZoneOffset]);
+  }, [currentTheme, range, selectedLanguage, selectedTimeZoneOffset]);
 
   const formatDateRange = useCallback(() => {
     if (!range) return 'Chưa chọn ngày';
@@ -84,10 +96,18 @@ export function FormSheetScreen({ route }: FormSheetScreenProps) {
     return `📅 ${fromDate} → ${toDate ?? '?'}`;
   }, [range]);
 
+  const textColor = currentTheme === 'light' ? '#000' : '#fff';
+
   return (
     <View style={styles.container}>
       <Text style={styles.sheetTitle}>FormSheet Demo</Text>
       <Text style={styles.result}>{formatDateRange()}</Text>
+
+      <LanguageSelector
+        selectedLanguage={selectedLanguage}
+        onSelect={setSelectedLanguage}
+        textColor={textColor}
+      />
 
       <TouchableOpacity
         style={[styles.button, styles.buttonBlue]}

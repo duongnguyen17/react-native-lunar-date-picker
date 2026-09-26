@@ -123,6 +123,7 @@ export type LDP_CustomStyle = {
 };
 
 export type LDP_CustomLanguage = {
+  /** Seven weekday labels ordered Monday through Sunday. Both platforms start weeks on Monday. */
   weekdayNames: string[];
   /**
    * dùng cho phần selected hiển thị thứ ngày tháng

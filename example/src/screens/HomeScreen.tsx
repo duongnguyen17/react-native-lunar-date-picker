@@ -17,7 +17,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LanguageSelector } from '../components/LanguageSelector';
 import { PICKER_CONFIG } from '../constants';
+import type { PickerLanguage } from '../constants';
 import { fetchPricesForRange } from '../services/mockApi';
 import type { DateRange } from '../types';
 import type { RootStackParamList } from '../types/navigation';
@@ -52,6 +54,8 @@ const TIME_ZONE_OPTIONS: Array<{ label: string; offsetHours?: number }> = [
 
 export function HomeScreen({ navigation }: HomeScreenProps) {
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');
+  const [selectedLanguage, setSelectedLanguage] =
+    useState<PickerLanguage>('vi');
   const [range, setRange] = useState<DateRange | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [priceMode, setPriceMode] = useState<PriceMode>('none');
@@ -168,7 +172,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     setPriceMode('none');
     pickDate({
       theme: currentTheme,
-      language: 'vi',
+      language: selectedLanguage,
       title: 'Chọn ngày (không có giá)',
       mode: 'range',
       ...buildMinMax(),
@@ -176,14 +180,14 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range, selectedTimeZoneOffset]);
+  }, [currentTheme, range, selectedLanguage, selectedTimeZoneOffset]);
 
   const openPickerPreloaded = useCallback(() => {
     setPriceMode('preloaded');
     const prices = generateSamplePrices(selectedTimeZoneOffset);
     pickDate({
       theme: currentTheme,
-      language: 'vi',
+      language: selectedLanguage,
       title: 'Chọn ngày (giá có sẵn)',
       mode: 'range',
       ...buildMinMax(),
@@ -192,7 +196,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range, selectedTimeZoneOffset]);
+  }, [currentTheme, range, selectedLanguage, selectedTimeZoneOffset]);
 
   const openPickerLazyLoad = useCallback(() => {
     setPriceMode('lazy');
@@ -202,7 +206,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
     pickDate({
       theme: currentTheme,
-      language: 'vi',
+      language: selectedLanguage,
       title: 'Chọn ngày (lazy load giá)',
       notice:
         'Lưu ý: Giá vé có thể thay đổi tùy thời điểm. Vui lòng kiểm tra kỹ trước khi thanh toán.',
@@ -218,6 +222,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   }, [
     currentTheme,
     range,
+    selectedLanguage,
     handleMounted,
     handleSelectFromDate,
     selectedTimeZoneOffset,
@@ -227,7 +232,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
     setPriceMode('none');
     pickDate({
       theme: currentTheme,
-      language: 'vi',
+      language: selectedLanguage,
       title: 'Chọn ngày (Max 30 ngày từ from-date)',
       notice:
         'Lưu ý: Khi chọn xong ngày đi, ngày về chỉ được chọn tối đa trong vòng 30 ngày.',
@@ -249,13 +254,13 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range, selectedTimeZoneOffset]);
+  }, [currentTheme, range, selectedLanguage, selectedTimeZoneOffset]);
 
   const openPickerCombinedDemo = useCallback(() => {
     setPriceMode('lazy');
     pickDate({
       theme: currentTheme,
-      language: 'vi',
+      language: selectedLanguage,
       title: 'Kết hợp: Load Giá + MaxDate 30 ngày',
       notice:
         'Lưu ý: Khi chọn ngày đi, giá vé cho 30 ngày tiếp theo sẽ được tải và maximumDate tự động giới hạn 30 ngày.',
@@ -290,7 +295,13 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       onDone: handleDone,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTheme, range, handleMounted, selectedTimeZoneOffset]);
+  }, [
+    currentTheme,
+    range,
+    selectedLanguage,
+    handleMounted,
+    selectedTimeZoneOffset,
+  ]);
 
   const openSinglePicker = useCallback(() => {
     const maximumDate = formatDateInTimeZone(
@@ -300,7 +311,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
 
     pickDate({
       theme: currentTheme,
-      language: 'vi',
+      language: selectedLanguage,
       title: 'Chọn ngày (Single)',
       mode: 'single',
       minimumDate: addYearsToDateString(maximumDate, -1),
@@ -310,7 +321,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         setRange({ from: parseDate(result.from), to: undefined });
       },
     });
-  }, [currentTheme, selectedTimeZoneOffset]);
+  }, [currentTheme, selectedLanguage, selectedTimeZoneOffset]);
 
   // ---------------------------------------------------------------------------
   // Periodic price update demo for preloaded mode
@@ -403,6 +414,12 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           )}
         </View>
 
+        <LanguageSelector
+          selectedLanguage={selectedLanguage}
+          onSelect={setSelectedLanguage}
+          textColor={textColor}
+        />
+
         {/* Timezone selection */}
         <View style={[styles.timeZoneCard, { backgroundColor: cardBg }]}>
           <Text style={[styles.timeZoneTitle, { color: textColor }]}>
@@ -454,6 +471,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           onPress={() =>
             navigation.navigate('FormSheet', {
               currentTheme,
+              selectedLanguage,
               selectedTimeZoneOffset,
             })
           }

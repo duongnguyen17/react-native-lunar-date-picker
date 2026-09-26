@@ -237,6 +237,7 @@ class ConfigurationCacheService {
     }
     language?.let { l ->
       keyBuilder.append(l.weekdayNames.joinToString(",")).append("|")
+      keyBuilder.append(l.locale).append("|")
     }
     return generateMD5Hash(keyBuilder.toString())
   }

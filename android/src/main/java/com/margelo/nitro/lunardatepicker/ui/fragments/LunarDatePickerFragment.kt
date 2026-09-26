@@ -388,6 +388,7 @@ class LunarDatePickerFragment : DialogFragment() {
         val endMonth = maximumDate?.let { YearMonth.from(it) }
             ?: YearMonth.from(currentDate.plusYears(config.yearRangeOffset.toLong()))
 
+        // Match the weekdayNames array, which is ordered Monday through Sunday.
         calendarView.setup(startMonth, endMonth, DayOfWeek.MONDAY)
         calendarView.scrollToMonth(YearMonth.from(currentDate))
     }

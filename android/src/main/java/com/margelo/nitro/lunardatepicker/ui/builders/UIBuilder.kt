@@ -93,6 +93,7 @@ class UIBuilder(
             }
         }
         
+        // The header order matches CalendarView's Monday-first setup.
         config.weekView.weekdayNames.forEachIndexed { index, dayName ->
             val textView = TextView(context).apply {
                 text = dayName
@@ -124,4 +125,4 @@ class UIBuilder(
             this.cornerRadius = cornerRadius * context.resources.displayMetrics.density
         }
     }
-} 
+}

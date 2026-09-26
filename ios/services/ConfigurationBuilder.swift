@@ -112,8 +112,11 @@ final class ConfigurationBuilder: ConfigurationProviding {
   func applyLanguage(_ language: LDP_CustomLanguage, to config: inout PickerConfig)
   {
     config.weekView.weekdayNames = language.weekdayNames
-    // Apply locale for all native date formatting
-    config.calendar.locale = Locale(identifier: language.locale)
+    // Apply locale for formatting while keeping the calendar Monday-first.
+    var calendar = config.calendar
+    calendar.locale = Locale(identifier: language.locale)
+    calendar.firstWeekday = 2
+    config.calendar = calendar
   }
 
   func applyTimeZone(_ offset: Double?, to config: inout PickerConfig) {
