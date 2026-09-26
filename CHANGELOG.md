@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-09-26
+
+### Fixed
+
+- **iOS & Android**: Standardized calendar weeks to run Monday through Sunday regardless of locale, keeping weekday labels aligned with dates.
+
+### Added
+
+- **Example**: Added Vietnamese and English language switching for single-date and range picker flows.
+
 ## [1.2.1] - 2026-09-26
 
 ### Changed
