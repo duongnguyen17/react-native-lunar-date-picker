@@ -15,7 +15,7 @@ export const fetchPricesForMonth = async (
   const delay =
     MOCK_API_CONFIG.MIN_DELAY +
     Math.random() * (MOCK_API_CONFIG.MAX_DELAY - MOCK_API_CONFIG.MIN_DELAY);
-  await new Promise((resolve) => setTimeout(resolve, delay));
+  await new Promise<void>((resolve) => setTimeout(resolve, delay));
 
   // Parse MM/YYYY
   const [monthNum, year] = month.split('/').map(Number);
@@ -76,7 +76,7 @@ export const fetchPricesForRange = async (
   const delay =
     MOCK_API_CONFIG.MIN_DELAY +
     Math.random() * (MOCK_API_CONFIG.MAX_DELAY - MOCK_API_CONFIG.MIN_DELAY);
-  await new Promise((resolve) => setTimeout(resolve, delay));
+  await new Promise<void>((resolve) => setTimeout(resolve, delay));
 
   const parseDate = (s: string): Date => {
     const [d, m, y] = s.split('/').map(Number);

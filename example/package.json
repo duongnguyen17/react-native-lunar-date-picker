@@ -14,13 +14,13 @@
     "postinstall": "node -e \"['react-native-safe-area-context','react-native-screens'].forEach(p=>{try{require('fs').rmSync(require('path').join('../node_modules',p),{recursive:true,force:true});console.log('Removed hoisted '+p+' from root node_modules')}catch(e){}})\""
   },
   "dependencies": {
-    "@react-navigation/native": "^7.3.16",
-    "@react-navigation/native-stack": "^7.18.8",
-    "react": "19.2.8",
-    "react-native": "0.87.0",
-    "react-native-nitro-modules": "^0.36.5",
-    "react-native-safe-area-context": "^5.9.0",
-    "react-native-screens": "^4.27.0"
+    "@react-navigation/native": "^7.5.1",
+    "@react-navigation/native-stack": "^7.21.0",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-nitro-modules": "^0.37.2",
+    "react-native-safe-area-context": "^5.11.1",
+    "react-native-screens": "^4.30.1"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
@@ -29,9 +29,10 @@
     "@react-native-community/cli": "20.2.0",
     "@react-native-community/cli-platform-android": "20.2.0",
     "@react-native-community/cli-platform-ios": "20.2.0",
-    "@react-native/babel-preset": "0.87.0",
-    "@react-native/metro-config": "0.87.0",
-    "@react-native/typescript-config": "0.87.0",
+    "@react-native/babel-preset": "0.88.1",
+    "@react-native/jest-preset": "0.88.1",
+    "@react-native/metro-config": "0.88.1",
+    "@react-native/typescript-config": "0.88.1",
     "@types/react": "^19.2.18",
     "react-native-builder-bob": "^0.43.0",
     "react-native-monorepo-config": "^0.4.0"
