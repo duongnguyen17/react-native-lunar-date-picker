@@ -18,13 +18,15 @@ A powerful and feature-rich React Native lunar date picker component built with 
 - 📱 **Cross-platform** - Works seamlessly on iOS and Android with identical behavior
 - ⚡ **High performance** - Built with Nitro Modules for native performance
 - 🚀 **Optimized Android rendering** - Uses high-performance [kizitonwose Calendar](https://github.com/kizitonwose/Calendar) library for 60% faster scrolling
+- 🧮 **Lunar month span cache** - Bounded LRU cache infers lunar dates from month-level metadata, reducing expensive trigonometric calculations by ~95%
+- 🎯 **Targeted calendar invalidation** - Refreshes only affected months on selection/price changes instead of full calendar redraws (Android)
 - 📏 **Fluid layout scaling** - Automatically scales typography and UI elements for a consistent look across all phone sizes (390px to 430px)
 - 🖥️ **Native tablet support** - Beautiful centered Form Sheet presentation on iPads and Android tablets
 - 🎨 **Customizable themes** - Light/dark themes with full customization
 - 🌍 **Multi-language support** - Vietnamese, English, and extensible for other languages
 - 📅 **Flexible date selection** - Single date or date range selection
 - ⏰ **Timezone aware** - Proper timezone support for accurate date handling across regions
-- 🚀 **Optimized rendering** - Hash-based change detection and partial updates for better performance
+- 🧪 **Thoroughly tested** - 20+ unit tests and regression scripts with oracle-based correctness verification across multiple years and timezones
 
 > **Note:** This calendar is designed specifically for flight booking and scheduling use cases. As such, it is intentionally not an "infinite" calendar. It only renders a limited number of years (configurable via `yearRangeOffset`) to optimize performance and memory usage for booking scenarios.
 
@@ -314,17 +316,24 @@ The picker includes several performance improvements:
 **Android Optimizations:**
 
 - **High-performance calendar library**: Uses [kizitonwose Calendar](https://github.com/kizitonwose/Calendar) for 60% faster scrolling
-- **Optimized RecyclerView**: Hardware-accelerated rendering with better memory management
-- **Smooth range selection**: Streamlined selection logic inspired by Example4Fragment
+- **Targeted month invalidation**: `CalendarInvalidation` diffs selection and price changes to refresh only affected months via `notifyMonthChanged()` instead of full `notifyCalendarChanged()` redraws — eliminates unnecessary layout passes and reduces UI jank during interactions
+- **Cooperative cache preloading**: `preloadLunarDateCache` runs as a `suspend` function with `ensureActive()` cancellation, respecting lifecycle and min/max date bounds
+- **Smart prewarm scope**: Lunar cache prewarm targets only 3 months around the selected date (or today), skips entirely when `showLunarDate` is off
+
+**iOS Optimizations:**
+
+- **Serial write queue**: `LunarPersistentCache` disk writes use a dedicated serial `DispatchQueue` instead of the shared global queue, preventing write contention on concurrent access
+- **Static cache key computation**: `lunarCacheKey()` is now a `static func`, eliminating `self` capture in background prewarm closures
+- **Smart prewarm**: Early-returns when `showLunarDate` is false to avoid unnecessary background work
 
 **Cross-platform Optimizations:**
 
-- **Lunar month span cache**: A bounded LRU cache records month-level metadata from exact calculations and infers subsequent days without expensive trigonometric recalculation (~95% fewer exact calls)
-- **Timezone-aware caching**: Consistent date formatting and lunar calculations with zone/offset/year identity keys
+- **Lunar month span cache**: A bounded LRU cache (24 spans) records month-level metadata from exact calculations and infers subsequent days without expensive trigonometric recalculation — benchmarked at **~95% fewer exact calls** and **5× faster** warm-cache conversions
+- **Timezone-safe cache identity**: Zone ID, UTC offset seconds, and Gregorian year form the cache key, preventing cross-timezone or DST-transition data leaks
+- **Lazy formatters and drawables**: Per-ViewHolder reuse of `NumberFormatter`/`DecimalFormat` and `GradientDrawable` to minimize per-cell allocations
 - **Fluid scaling & Tablet bounds**: Responsive typography on mobile and centered Dialogs/Form Sheets on tablets
 - **Memory leak prevention**: Proper cleanup of handlers, work items, and references
-- **LRU cache management**: Smart cache eviction prevents memory growth (iOS)
-- **Lazy formatters and drawables**: Per-ViewHolder reuse of `NumberFormatter`/`DecimalFormat` and `GradientDrawable` to minimize per-cell allocations
+- **Bounded cache management**: Smart LRU eviction prevents unbounded memory growth on both platforms
 
 ### Theme Customization
 

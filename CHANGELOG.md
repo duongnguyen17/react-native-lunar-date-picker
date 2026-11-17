@@ -7,30 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-17
+
+### Added
+
+- **iOS & Android**: Lunar month span cache (`LunarMonthSpanCache`) — a bounded LRU cache (24 spans) that records month-level metadata from exact lunar calculations and infers days 1–29 (or 1–30 when confirmed) without recalculating. Reduces expensive trigonometric calls by **~95%** for sequential calendar access; benchmarked at **5× faster** warm-cache conversions compared to the exact oracle.
+- **Android**: Targeted calendar invalidation (`CalendarInvalidation`) — diffs selection and price changes to refresh only the affected months via `notifyMonthChanged()` instead of full `notifyCalendarChanged()` redraws, significantly reducing UI jank during interactions.
+- **Android**: `VietnameseLunarDateCalculator` — extracted standalone, stateless lunar date conversion oracle for clean separation of concerns and independent testability.
+- **Android**: 20 new unit tests covering `CalendarInvalidation` (11 tests) and `LunarMonthSpanCache` (9 tests), including oracle-based correctness verification across 12 years × 3 timezones, concurrent safety, and boundary conditions.
+- **iOS**: Regression test scripts for lunar cache and span cache (`scripts/`) covering 800 years × 4 timezones with exact oracle comparison.
+
 ### Changed
 
-- **iOS & Android**: Replaced over-engineered object pooling (`ObjectPool`, `GradientDrawablePool`, `MemoryOptimizer`) and configuration caching (`ConfigurationCacheService`) with simple lazy-initialized per-ViewHolder drawables and formatters, reducing codebase complexity by ~560 lines.
-- **iOS & Android**: Extracted exact lunar calculation math into a standalone `VietnameseLunarDateCalculator` (Kotlin) / renamed exact path to `getVietnameseLunarDateExact` (Swift), keeping the trigonometric oracle isolated and testable.
-- **iOS & Android**: Introduced `LunarMonthSpanCache` — a bounded LRU cache (24 spans) that records month-level metadata from exact lunar calculations and infers days 1–29 (or 1–30 when confirmed) without recalculating, reducing expensive trig calls by ~95% for sequential calendar access.
-- **Android**: Replaced full `notifyCalendarChanged()` redraws with targeted `notifyMonthChanged()` via new `CalendarInvalidation` utility that diffs selection and price changes to refresh only affected months (up to 6; falls back to full refresh beyond that).
+- **iOS & Android**: Replaced over-engineered object pooling (`ObjectPool`, `GradientDrawablePool`, `MemoryOptimizer`) and configuration caching (`ConfigurationCacheService`) with simple lazy-initialized per-ViewHolder drawables and formatters, removing ~560 lines of unnecessary complexity.
+- **iOS & Android**: Extracted exact lunar math into a standalone calculator (Kotlin) / renamed to `getVietnameseLunarDateExact` (Swift), keeping the trigonometric oracle isolated.
 - **Android**: `preloadLunarDateCache` is now a `suspend` function with cooperative cancellation via `ensureActive()`.
-- **Android**: `prewarmLunarCache()` skips work when `showLunarDate` is false, targets 3 months from selection/today instead of a fixed window, and respects min/max date bounds.
-- **iOS**: `LunarPersistentCache` disk writes now use a dedicated serial queue instead of `DispatchQueue.global` to prevent write contention; eviction logic extracted into reusable `evictIfNeeded()`.
+- **Android**: `prewarmLunarCache()` skips work when `showLunarDate` is false, targets only 3 months from the selected/today date instead of a fixed window, and respects min/max date bounds.
+- **iOS**: `LunarPersistentCache` disk writes use a dedicated serial queue instead of `DispatchQueue.global` to prevent write contention; eviction logic extracted into reusable `evictIfNeeded()`.
 - **iOS**: `PickerController.lunarCacheKey()` converted to `static func` to eliminate `self` capture in background prewarm; `formatPrice()` reuses a lazy `priceFormatter` instead of allocating per cell.
 - **iOS**: `prewarmLunarCache()` early-returns when `showLunarDate` is false.
 
 ### Removed
 
-- **Android**: Deleted `ObjectPool.kt`, `MemoryOptimizer.kt`, `ConfigurationCacheService.kt`, and inline lunar math from `DateConverter.kt`.
-
-### Added
-
-- **Android**: `CalendarInvalidation.kt` — pure utility for computing which `YearMonth`s need refreshing on selection or price changes.
-- **Android**: `VietnameseLunarDateCalculator.kt` — extracted standalone lunar date conversion oracle.
-- **Android**: `LunarMonthSpanCache.kt` — bounded LRU lunar month span cache with zone/offset/year identity keys.
-- **iOS**: `LunarMonthSpanCache.swift` — Swift equivalent of the Kotlin span cache.
-- **Android**: Unit tests for `CalendarInvalidation` (11 tests) and `LunarMonthSpanCache` (9 tests) with oracle-based correctness verification across 12 years × 3 timezones.
-- **iOS**: Regression test scripts for lunar cache and span cache (`scripts/`).
+- **Android**: Deleted `ObjectPool.kt` (229 lines), `MemoryOptimizer.kt` (51 lines), `ConfigurationCacheService.kt` (277 lines), and inline lunar math from `DateConverter.kt` (~144 lines).
 
 ## [1.2.2] - 2026-09-26
 

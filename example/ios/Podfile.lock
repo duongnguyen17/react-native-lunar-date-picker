@@ -15,7 +15,7 @@ PODS:
     - hermes-engine/Pre-built (= 260318099.0.5)
   - hermes-engine/Pre-built (260318099.0.5)
   - JTAppleCalendar (8.0.5)
-  - LunarDatePicker (1.2.2):
+  - LunarDatePicker (1.3.0):
     - hermes-engine
     - JTAppleCalendar
     - NitroModules
@@ -2207,7 +2207,7 @@ SPEC CHECKSUMS:
   glog: 3cf7cb46f743c4bc758ae3e6d9c15bd1b4cfd6d4
   hermes-engine: 79484fc4e58f328d01b9339ef899ca633d3702ee
   JTAppleCalendar: 16c6501b22cb27520372c28b0a2e0b12c8d0cd73
-  LunarDatePicker: 11612e66f8f73a7551887dd0b8e693a5eb83a104
+  LunarDatePicker: ee449b01fb0c54c269db63d58505f7ec4902eb8d
   NitroModules: f1a11047ebbb0202a7d0033d6e99ad0527d34b00
   RCT-Folly: 82921e585c0400eda46fac1068297aa9dfb035e4
   RCTDeprecation: c62b9b3fbf0d26b76755f3ebd1c913a4fb469dde
