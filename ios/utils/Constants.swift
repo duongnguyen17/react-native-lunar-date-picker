@@ -47,6 +47,10 @@ enum Constants {
     static let lunarDateLabelHorizontalOffset: CGFloat = Scale.value(6)
     /// Khoảng cách từ priceLabel tới lunarDateLabel
     static let priceLabelTopSpacing: CGFloat = Scale.value(1)
+    /// Raise the lower labels within the selected-day background.
+    static let lunarDateLabelVerticalOffset: CGFloat = Scale.value(-1)
+    static let priceLabelVerticalOffset: CGFloat = Scale.value(-2)
+    static let priceLabelWithoutLunarVerticalOffset: CGFloat = Scale.value(-1)
     static let monthHeaderLeftPadding: CGFloat = Scale.value(8)
     static let monthHeaderRightPadding: CGFloat = Scale.value(-16)
     static let monthHeaderTopPadding: CGFloat = Scale.value(20)

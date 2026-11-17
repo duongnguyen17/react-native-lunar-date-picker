@@ -139,10 +139,10 @@ extension PickerController: JTACMonthViewDelegate {
     if cellState.dateBelongsTo != .thisMonth {
       return false
     }
-    if let minimumDate = privateMinimumDate, date < minimumDate.startOfDay() {
+    if let minimumDate = privateMinimumDate, date < minimumDate {
       return false
     }
-    if let maximumDate = privateMaximumDate, date > maximumDate.endOfDay() {
+    if let maximumDate = privateMaximumDate, date > maximumDate {
       return false
     }
     return true

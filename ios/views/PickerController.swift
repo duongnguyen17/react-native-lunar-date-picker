@@ -166,6 +166,7 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
 
   /// Price data: key = "DD/MM/YYYY"
   internal var priceMap: [String: LDP_PriceData] = [:]
+  private var pendingPriceReloadDates: Set<Date> = []
 
   /// Whether prices were passed in (even if empty) — controls priceLabel visibility
   internal var hasPrices: Bool = false
@@ -186,6 +187,7 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
     let f = DateFormatter()
     f.dateFormat = "dd/MM/yyyy"
     f.locale = Locale(identifier: "en_US_POSIX")
+    f.calendar = self.config.calendar
     f.timeZone = self.config.calendar.timeZone
     return f
   }()
@@ -218,7 +220,7 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
       self.privateMinimumDate
     }
     set {
-      self.privateMinimumDate = newValue?.startOfDay()
+      self.privateMinimumDate = newValue?.startOfDay(in: self.config.calendar)
     }
   }
 
@@ -228,7 +230,7 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
       self.privateMaximumDate
     }
     set {
-      self.privateMaximumDate = newValue?.endOfDay()
+      self.privateMaximumDate = newValue?.endOfDay(in: self.config.calendar)
     }
   }
 
@@ -236,7 +238,9 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
 
   public init(config: PickerConfig = .default) {
     self.config = config
+    self.dayFormatter.calendar = config.calendar
     self.dayFormatter.locale = config.calendar.locale
+    self.dayFormatter.timeZone = config.calendar.timeZone
     self.dayFormatter.dateFormat = "d"
     super.init(nibName: nil, bundle: nil)
   }
@@ -353,6 +357,7 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
     hasPendingCalendarReload = false
     pendingCalendarScrollDate = nil
     activeCalendarScrollDate = nil
+    pendingPriceReloadDates.removeAll()
     initialCalendarScrollRequested = false
 
     // Invalidate timers & observers early
@@ -524,6 +529,7 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
       initialCalendarScrollRequested = false
       needsInitialScroll = false
     }
+    flushPriceReloads()
   }
 
   private func clampedCalendarScrollDate(_ date: Date) -> Date {
@@ -1017,15 +1023,32 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
 
   // MARK: - Price Helpers
 
-  /// Cập nhật price map với dữ liệu mới cho 1 tháng, reload lại calendar
+  /// Replace the price snapshot and refresh only dates whose displayed price changed.
   internal func updatePrices(_ newPrices: [LDP_PriceData]) {
-    priceMap.removeAll()
+    guard !hasCleanedUp else { return }
+    var updatedPrices: [String: LDP_PriceData] = [:]
     for price in newPrices {
-      priceMap[price.date] = price
+      updatedPrices[price.date] = price
     }
-    DispatchQueue.main.async { [weak self] in
-      self?.requestCalendarReload()
+    let changedKeys = PriceUpdateDiff.changedKeys(from: priceMap, to: updatedPrices)
+    priceMap = updatedPrices
+    guard hasPrices else { return }
+
+    for key in changedKeys {
+      if let date = priceDateFormatter.date(from: key), priceDateFormatter.string(from: date) == key {
+        pendingPriceReloadDates.insert(date)
+      }
     }
+    flushPriceReloads()
+  }
+
+  private func flushPriceReloads() {
+    guard !hasCleanedUp, !needsInitialScroll, !isCalendarReloadInProgress,
+      !hasPendingCalendarReload, !pendingPriceReloadDates.isEmpty
+    else { return }
+    let dates = Array(pendingPriceReloadDates)
+    pendingPriceReloadDates.removeAll()
+    calendarView.reloadDates(dates)
   }
 
   /// Cập nhật maximumDate mới và reload lại calendar UI

@@ -257,6 +257,18 @@ final class DayCell: JTACDayCell {
     
     dateLabel.isHidden = !hasDateContent
     lunarDateLabel.isHidden = !hasDateContent || isLunarEmpty
+    // Move the lower lines away from the rounded bottom edge without moving
+    // the solar date or the selection background.
+    lunarDateLabel.transform = CGAffineTransform(
+      translationX: 0,
+      y: Constants.Layout.lunarDateLabelVerticalOffset
+    )
+    priceLabel.transform = CGAffineTransform(
+      translationX: 0,
+      y: isLunarEmpty
+        ? Constants.Layout.priceLabelWithoutLunarVerticalOffset
+        : Constants.Layout.priceLabelVerticalOffset
+    )
     if isLunarEmpty {
       priceLabelTopAfterLunarConstraint?.isActive = false
       priceLabelTopAfterDateConstraint?.isActive = true
@@ -375,12 +387,16 @@ extension DayCell {
     config.dateLabelText = state.text
 
     // Check date constraints
-    if let minimumDate = minimumDate, state.date < minimumDate.startOfDay() {
+    if let minimumDate = minimumDate,
+      state.date < minimumDate.startOfDay(in: calendar)
+    {
       config.isDateEnabled = false
       return config
     }
     
-    if let maximumDate = maximumDate, state.date > maximumDate.endOfDay() {
+    if let maximumDate = maximumDate,
+      state.date > maximumDate.endOfDay(in: calendar)
+    {
       config.isDateEnabled = false
       return config
     }

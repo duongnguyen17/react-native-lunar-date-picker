@@ -67,9 +67,11 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
     try coordinator.present(with: params)
   }
 
-  /// Cập nhật giá cho một tháng cụ thể
+  /// Replaces the price snapshot shown by the active picker.
   public func updatePrices(params: LDP_PriceUpdateParams) throws {
-    coordinator.updatePrices(with: params)
+    DispatchQueue.main.async { [weak self] in
+      self?.coordinator.updatePrices(with: params)
+    }
   }
 
   /// Cập nhật maximumDate khi calendar đang mở
