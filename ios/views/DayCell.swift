@@ -84,7 +84,8 @@ final class DayCell: JTACDayCell {
   // MARK: - Properties
 
   private var config: PickerConfig = PickerConfig.default
-  private var priceLabelTopConstraint: NSLayoutConstraint?
+  private var priceLabelTopAfterDateConstraint: NSLayoutConstraint?
+  private var priceLabelTopAfterLunarConstraint: NSLayoutConstraint?
   
 
   // MARK: - Lifecycle
@@ -160,22 +161,29 @@ final class DayCell: JTACDayCell {
       dateLabel.centerXAnchor.constraint(equalTo: dateContainerView.centerXAnchor),
       dateLabel.topAnchor.constraint(equalTo: dateContainerView.topAnchor),
       
-      lunarDateLabel.trailingAnchor.constraint(equalTo: dateContainerView.trailingAnchor, constant: -8),
+      lunarDateLabel.centerXAnchor.constraint(
+        equalTo: dateLabel.centerXAnchor,
+        constant: Constants.Layout.lunarDateLabelHorizontalOffset
+      ),
       lunarDateLabel.topAnchor.constraint(
         equalTo: dateLabel.bottomAnchor,
-        constant: -2
+        constant: Constants.Layout.lunarDateLabelTopSpacing
       ),
 
       priceLabel.centerXAnchor.constraint(equalTo: dateContainerView.centerXAnchor),
       priceLabel.bottomAnchor.constraint(equalTo: dateContainerView.bottomAnchor)
     ])
-    
-    let priceTop = priceLabel.topAnchor.constraint(
+    let priceTopAfterDate = priceLabel.topAnchor.constraint(
       equalTo: dateLabel.bottomAnchor,
-      constant: Constants.Layout.priceLabelTopSpacing + 8
+      constant: Constants.Layout.priceLabelTopSpacing
     )
-    self.priceLabelTopConstraint = priceTop
-    priceTop.isActive = true
+    let priceTopAfterLunar = priceLabel.topAnchor.constraint(
+      equalTo: lunarDateLabel.bottomAnchor,
+      constant: Constants.Layout.priceLabelTopSpacing
+    )
+    self.priceLabelTopAfterDateConstraint = priceTopAfterDate
+    self.priceLabelTopAfterLunarConstraint = priceTopAfterLunar
+    priceTopAfterDate.isActive = true
   }
 
   private func setupRangeViewConstraints() {
@@ -244,12 +252,18 @@ final class DayCell: JTACDayCell {
 
   private func configureVisibility(_ config: ViewConfig) {
     let hasDateContent = config.dateLabelText != nil
+    let isLunarEmpty =
+      config.lunarDateLabelText?.trimmingCharacters(in: .whitespaces).isEmpty ?? true
     
     dateLabel.isHidden = !hasDateContent
-    let isLunarEmpty = config.lunarDateLabelText?.trimmingCharacters(in: .whitespaces).isEmpty ?? true
     lunarDateLabel.isHidden = !hasDateContent || isLunarEmpty
-    
-    priceLabelTopConstraint?.constant = isLunarEmpty ? Constants.Layout.priceLabelTopSpacing : (Constants.Layout.priceLabelTopSpacing + 8)
+    if isLunarEmpty {
+      priceLabelTopAfterLunarConstraint?.isActive = false
+      priceLabelTopAfterDateConstraint?.isActive = true
+    } else {
+      priceLabelTopAfterDateConstraint?.isActive = false
+      priceLabelTopAfterLunarConstraint?.isActive = true
+    }
     
     let wasHidden = selectionBackgroundView.isHidden
     selectionBackgroundView.isHidden = config.isSelectedViewHidden

@@ -1,8 +1,10 @@
 package com.margelo.nitro.lunardatepicker.ui.viewholders
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -53,10 +55,6 @@ class DayViewHolder(
 
   private var currentDrawable: GradientDrawable? = null
 
-  companion object {
-    // Today will be calculated per instance using timezone
-  }
-
   init {
     setupViews()
   }
@@ -76,6 +74,9 @@ class DayViewHolder(
     val context = view.context
 
     rootFrame = FrameLayout(context).apply {
+      if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        minimumHeight = dpToPx(54)
+      }
       layoutParams = FrameLayout.LayoutParams(
         ViewGroup.LayoutParams.MATCH_PARENT,
         ViewGroup.LayoutParams.WRAP_CONTENT
@@ -84,15 +85,10 @@ class DayViewHolder(
 
     val rangeContainer = LinearLayout(context).apply {
       orientation = LinearLayout.HORIZONTAL
-      setPadding(
-        0,
-        dpToPx(LayoutConstants.Padding.CELL_VERTICAL),
-        0,
-        dpToPx(LayoutConstants.Padding.CELL_VERTICAL)
-      )
       layoutParams = FrameLayout.LayoutParams(
         FrameLayout.LayoutParams.MATCH_PARENT,
-        FrameLayout.LayoutParams.MATCH_PARENT
+        UIConstants.DayCell.SELECTED_CIRCLE_SIZE,
+        Gravity.TOP
       )
     }
 
@@ -148,6 +144,9 @@ class DayViewHolder(
       gravity = Gravity.CENTER
       textSize = LayoutConstants.TextSize.PRICE_TEXT
       includeFontPadding = false
+      minLines = 1
+      maxLines = 1
+      ellipsize = TextUtils.TruncateAt.END
       visibility = View.GONE
       layoutParams = LinearLayout.LayoutParams(
         ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -281,7 +280,6 @@ class DayViewHolder(
    * 1000000 / 1000 = 1000.000 → "1000.000K" — cần làm tròn tới phần nghìn thứ 3
    * Ví dụ: 1000000 → 1.000K, 2897000 → 2.897K
    */
-  @SuppressLint("DefaultLocale")
   private fun formatPrice(price: Double): String {
     val thousands = (price / 1000.0).toLong()
     val format = java.text.DecimalFormat("#,###")

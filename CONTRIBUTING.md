@@ -96,6 +96,18 @@ Remember to add tests for your change if possible. Run the unit tests by:
 yarn test
 ```
 
+### Native regression checks
+
+Run the Android safe-inset unit tests from `example/android` after setting up
+the example dependencies and generating Nitro code:
+
+```sh
+./gradlew :2security_lunar-date-picker:testDebugUnitTest
+```
+
+These tests cover safe-inset overlap for expanded sheets, floating dialogs,
+landscape cutouts and bars, removed insets, and partially inset sheets.
+
 ### Commit message convention
 
 We follow the [conventional commits specification](https://www.conventionalcommits.org/en) for our commit messages:

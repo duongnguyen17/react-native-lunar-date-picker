@@ -1,18 +1,17 @@
 package com.margelo.nitro.lunardatepicker.ui.fragments
 
-import android.annotation.SuppressLint
 import android.app.Dialog
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.FrameLayout
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.WindowCompat
 import androidx.core.view.doOnLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +21,7 @@ import androidx.fragment.app.DialogFragment
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.view.CalendarView
+import com.kizitonwose.calendar.view.DaySize
 import com.kizitonwose.calendar.view.MarginValues
 import com.kizitonwose.calendar.view.MonthDayBinder
 import com.kizitonwose.calendar.view.MonthHeaderFooterBinder
@@ -30,6 +30,7 @@ import com.margelo.nitro.lunardatepicker.LDP_Range
 import com.margelo.nitro.lunardatepicker.R
 import com.margelo.nitro.lunardatepicker.constants.DataConstants
 import com.margelo.nitro.lunardatepicker.constants.LayoutConstants
+import com.margelo.nitro.lunardatepicker.constants.UIConstants
 import com.margelo.nitro.lunardatepicker.models.DateSelection
 import com.margelo.nitro.lunardatepicker.models.PickerConfig
 import com.margelo.nitro.lunardatepicker.models.SerializableRange
@@ -55,6 +56,8 @@ class LunarDatePickerFragment : DialogFragment() {
         private const val ARG_MAX_DATE = DataConstants.BundleKeys.ARG_MAX_DATE
         private const val ARG_INITIAL_VALUE = DataConstants.BundleKeys.ARG_INITIAL_VALUE
         private const val ARG_NOTICE = DataConstants.BundleKeys.ARG_NOTICE
+        private const val LANDSCAPE_MAX_WIDTH_DP = 580
+        private const val PORTRAIT_DIALOG_MAX_WIDTH_DP = 540
 
         fun newInstance(
             config: PickerConfig,
@@ -65,10 +68,12 @@ class LunarDatePickerFragment : DialogFragment() {
             notice: String? = null,
             onMounted: ((String, String) -> Unit)? = null,
             onSelectFromDate: ((String, String) -> Unit)? = null,
+            onDismissed: ((LunarDatePickerFragment) -> Unit)? = null,
             onResult: (LDP_Range) -> Unit
         ): LunarDatePickerFragment {
             val fragment = LunarDatePickerFragment()
             fragment.setupCallbacks(onResult, onMounted, onSelectFromDate)
+            fragment.onDismissedCallback = onDismissed
             fragment.pricesMap = prices
             fragment.arguments = createArguments(config, minimumDate, maximumDate, initialValue, notice)
             return fragment
@@ -95,7 +100,7 @@ class LunarDatePickerFragment : DialogFragment() {
     private lateinit var config: PickerConfig
     private lateinit var dateConverter: DateConverter
     private lateinit var uiBuilder: UIBuilder
-    private lateinit var calendarView: CalendarView
+    private var calendarView: CalendarView? = null
 
     // State
     private var minimumDate: LocalDate? = null
@@ -112,9 +117,13 @@ class LunarDatePickerFragment : DialogFragment() {
     private var onResultCallback: ((LDP_Range) -> Unit)? = null
     private var onMountedCallback: ((String, String) -> Unit)? = null
     private var onSelectFromDateCallback: ((String, String) -> Unit)? = null
+    private var onDismissedCallback: ((LunarDatePickerFragment) -> Unit)? = null
 
     // UI Elements
     private var submitIcon: TextView? = null
+    private var pickerContentView: View? = null
+    private var disposeSafeAreaInsets: (() -> Unit)? = null
+    private var bottomSheetDefaultMaxWidth = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -125,20 +134,26 @@ class LunarDatePickerFragment : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val displayMetrics = resources.displayMetrics
-        val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
-        val isTablet = screenWidthDp >= 540f
+        val screenWidthDp = resources.configuration.screenWidthDp
+        val screenHeightDp = resources.configuration.screenHeightDp
+        // A wide phone in landscape should retain the bottom-sheet presentation.
+        val isTablet = screenWidthDp >= 540 && screenHeightDp >= 540
 
-        val view = createBottomSheetView(isTablet)
+        val view = createBottomSheetView()
 
         if (isTablet) {
             val dialog = Dialog(requireContext())
             dialog.setContentView(view)
             dialog.window?.let { window ->
                 window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-                window.setLayout(dpToPx(540), dpToPx(620))
+                WindowCompat.setDecorFitsSystemWindows(window, false)
+                window.setLayout(
+                    dpToPx(centeredDialogWidthDp(resources.configuration)),
+                    dpToPx(minOf(620, screenHeightDp - 32)),
+                )
                 window.setGravity(android.view.Gravity.CENTER)
             }
+            dialog.setOnShowListener { initializeDisplayedState() }
             return dialog
         } else {
             val bottomSheetDialog = BottomSheetDialog(requireContext())
@@ -148,16 +163,84 @@ class LunarDatePickerFragment : DialogFragment() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        dialog?.window?.let { window ->
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            resizeCenteredDialog()
+            if (disposeSafeAreaInsets == null) {
+                disposeSafeAreaInsets = pickerContentView?.let { SafeAreaInsets.install(it, window.decorView) }
+            }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        resizeCenteredDialog(newConfig)
+        (dialog as? BottomSheetDialog)?.let { resizeBottomSheet(it, newConfig) }
+        calendarView?.daySize = daySizeFor(newConfig)
+    }
+
+    private fun daySizeFor(configuration: Configuration): DaySize {
+        if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            return DaySize.SeventhWidth
+        }
+        return DaySize.Square
+    }
+
+    private fun resizeBottomSheet(sheet: BottomSheetDialog, configuration: Configuration) {
+        val maxWidth = if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            val landscapeMaxWidth = dpToPx(LANDSCAPE_MAX_WIDTH_DP)
+            if (bottomSheetDefaultMaxWidth > 0) minOf(bottomSheetDefaultMaxWidth, landscapeMaxWidth)
+            else landscapeMaxWidth
+        } else {
+            bottomSheetDefaultMaxWidth
+        }
+        if (sheet.behavior.maxWidth != maxWidth) {
+            sheet.behavior.maxWidth = maxWidth
+            sheet.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.requestLayout()
+        }
+    }
+
+    private fun centeredDialogWidthDp(configuration: Configuration): Int {
+        val maxWidth = if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            LANDSCAPE_MAX_WIDTH_DP
+        } else {
+            PORTRAIT_DIALOG_MAX_WIDTH_DP
+        }
+        return minOf(maxWidth, configuration.screenWidthDp - 32).coerceAtLeast(1)
+    }
+
+    private fun resizeCenteredDialog(configuration: Configuration = resources.configuration) {
+        val currentDialog = dialog ?: return
+        if (currentDialog is BottomSheetDialog) return
+
+        val heightDp = configuration.screenHeightDp
+        currentDialog.window?.setLayout(
+            dpToPx(centeredDialogWidthDp(configuration)),
+            dpToPx(minOf(620, heightDp - 32).coerceAtLeast(1)),
+        )
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
-        // Clear binders to prevent potential memory leaks
-        calendarView.dayBinder = null
-        calendarView.monthHeaderBinder = null
+        disposeSafeAreaInsets?.invoke()
+        disposeSafeAreaInsets = null
+        pickerContentView = null
+        calendarView?.dayBinder = null
+        calendarView?.monthHeaderBinder = null
+        calendarView = null
     }
 
     override fun onDestroy() {
         super.onDestroy()
         cleanup()
+    }
+
+    override fun onDismiss(dialog: android.content.DialogInterface) {
+        super.onDismiss(dialog)
+        onDismissedCallback?.invoke(this)
+        onDismissedCallback = null
     }
 
     private fun initializeFromArguments() {
@@ -186,21 +269,17 @@ class LunarDatePickerFragment : DialogFragment() {
         onSelectFromDateCallback = onSelectFromDate
     }
 
-    private fun createBottomSheetView(isTablet: Boolean): View {
+    private fun createBottomSheetView(): View {
         val rootView = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
             
-            val radius = dpToPx(16).toFloat()
             background = GradientDrawable().apply {
                 setColor(config.controller.backgroundColor)
-                if (isTablet) {
-                    cornerRadii = floatArrayOf(radius, radius, radius, radius, radius, radius, radius, radius)
-                } else {
-                    cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
-                }
+                cornerRadius = dpToPx(UIConstants.CornerRadius.MODAL_DP).toFloat()
             }
             clipToOutline = true
         }
+        pickerContentView = rootView
 
         // Always add header bar (contains title, close button and submit button)
         rootView.addView(createHeaderBar())
@@ -323,17 +402,19 @@ class LunarDatePickerFragment : DialogFragment() {
             )
         }
 
-        calendarView = CalendarView(requireContext()).apply {
+        val calendar = CalendarView(requireContext()).apply {
             dayViewResource = R.layout.kiz_day_cell
             monthMargins = MarginValues(LayoutConstants.Padding.MONTH_VIEW_HORIZONTAL, 0)
             monthHeaderResource = R.layout.kiz_month_header
             orientation = RecyclerView.VERTICAL
+            daySize = daySizeFor(resources.configuration)
             clipToPadding = false
         }
+        calendarView = calendar
 
         setupCalendarView()
         calendarContainer.addView(
-            calendarView,
+            calendar,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
@@ -345,13 +426,14 @@ class LunarDatePickerFragment : DialogFragment() {
 
 
     private fun setupCalendarView() {
-        setupCalendarBinders()
-        setupCalendarRange()
+        val calendar = calendarView ?: return
+        setupCalendarBinders(calendar)
+        setupCalendarRange(calendar)
         // No additional listeners required currently
     }
 
-    private fun setupCalendarBinders() {
-        calendarView.dayBinder = object : MonthDayBinder<DayViewHolder> {
+    private fun setupCalendarBinders(calendar: CalendarView) {
+        calendar.dayBinder = object : MonthDayBinder<DayViewHolder> {
             override fun create(view: View): DayViewHolder {
                 return DayViewHolder(
                     view = view,
@@ -375,13 +457,13 @@ class LunarDatePickerFragment : DialogFragment() {
             }
         }
 
-        calendarView.monthHeaderBinder = object : MonthHeaderFooterBinder<MonthViewHolder> {
+        calendar.monthHeaderBinder = object : MonthHeaderFooterBinder<MonthViewHolder> {
             override fun create(view: View) = MonthViewHolder(view, config)
             override fun bind(container: MonthViewHolder, data: CalendarMonth) = container.bind(data)
         }
     }
 
-    private fun setupCalendarRange() {
+    private fun setupCalendarRange(calendarView: CalendarView) {
         val currentDate = LocalDate.now()
         val startMonth = minimumDate?.let { YearMonth.from(it) }
             ?: YearMonth.from(currentDate.minusYears(config.yearRangeOffset.toLong()))
@@ -396,6 +478,8 @@ class LunarDatePickerFragment : DialogFragment() {
     // Removed unused scroll listeners
 
     private fun setupBottomSheetBehavior(bottomSheetDialog: BottomSheetDialog) {
+        bottomSheetDefaultMaxWidth = bottomSheetDialog.behavior.maxWidth
+        resizeBottomSheet(bottomSheetDialog, resources.configuration)
         bottomSheetDialog.setOnShowListener { dialog ->
             val d = dialog as BottomSheetDialog
             val bottomSheet = d.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
@@ -406,15 +490,19 @@ class LunarDatePickerFragment : DialogFragment() {
                 behavior.isDraggable = true
                 it.background = android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
             }
-            scrollToCurrentDateIfNeeded()
-            if (config.controller.showSubmitButton) {
-                setConfirmButtonEnabled(
-                    if (config.controller.isSingleMode) selection.startDate != null else (selection.startDate != null && selection.endDate != null)
-                )
-            }
-            // Fire onMounted after dialog is fully shown & stable
-            fireOnMounted()
+            initializeDisplayedState()
         }
+    }
+
+    private fun initializeDisplayedState() {
+        scrollToCurrentDateIfNeeded()
+        if (config.controller.showSubmitButton) {
+            setConfirmButtonEnabled(
+                if (config.controller.isSingleMode) selection.startDate != null
+                else selection.startDate != null && selection.endDate != null
+            )
+        }
+        fireOnMounted()
     }
 
     private fun handleDateSelection(date: LocalDate) {
@@ -442,7 +530,7 @@ class LunarDatePickerFragment : DialogFragment() {
             fireOnSelectFromDate(date)
         }
 
-        calendarView.notifyCalendarChanged()
+        calendarView?.notifyCalendarChanged()
     }
 
     // region Helpers
@@ -450,7 +538,7 @@ class LunarDatePickerFragment : DialogFragment() {
     private fun handleSingleSelection(date: LocalDate) {
         selection = DateSelection(startDate = date, endDate = null)
         if (config.controller.showSubmitButton) setConfirmButtonEnabled(true)
-        calendarView.notifyCalendarChanged()
+        calendarView?.notifyCalendarChanged()
     }
 
     private fun handleAutoSubmit(date: LocalDate): Boolean {
@@ -466,19 +554,19 @@ class LunarDatePickerFragment : DialogFragment() {
         return when {
             currentFrom == null || currentTo != null -> {
                 selection = DateSelection(startDate = date, endDate = null)
-                calendarView.notifyCalendarChanged()
+                calendarView?.notifyCalendarChanged()
                 fireOnSelectFromDate(date)
                 true
             }
             date.isBefore(currentFrom) -> {
                 selection = DateSelection(startDate = date, endDate = null)
-                calendarView.notifyCalendarChanged()
+                calendarView?.notifyCalendarChanged()
                 fireOnSelectFromDate(date)
                 true
             }
             else -> {
                 selection = DateSelection(startDate = currentFrom, endDate = date)
-                calendarView.notifyCalendarChanged()
+                calendarView?.notifyCalendarChanged()
                 onResultCallback?.invoke(LDP_Range(from = dateConverter.stringFromDate(currentFrom, timeZone), to = dateConverter.stringFromDate(date, timeZone)))
                 dismiss()
                 true
@@ -557,8 +645,8 @@ class LunarDatePickerFragment : DialogFragment() {
                 maximumDate?.let { max -> if (max.isBefore(current)) max else current } ?: current
             }
 
-        calendarView.doOnLayout {
-            calendarView.scrollToMonth(YearMonth.from(targetDate))
+        calendarView?.let { calendar ->
+            calendar.doOnLayout { calendar.scrollToMonth(YearMonth.from(targetDate)) }
         }
     }
 
@@ -620,7 +708,7 @@ class LunarDatePickerFragment : DialogFragment() {
      */
     fun updatePrices(newPrices: Map<String, LDP_PriceData>) {
         pricesMap = newPrices
-        calendarView.notifyCalendarChanged()
+        calendarView?.notifyCalendarChanged()
     }
 
     /**
@@ -629,7 +717,7 @@ class LunarDatePickerFragment : DialogFragment() {
      */
     fun updateMaximumDate(newMaxDate: LocalDate) {
         maximumDate = newMaxDate
-        calendarView.notifyCalendarChanged()
+        calendarView?.notifyCalendarChanged()
     }
 
 

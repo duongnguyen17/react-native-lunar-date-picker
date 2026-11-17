@@ -28,7 +28,6 @@ object LayoutConstants {
         val WEEK_VIEW_ALL = ScaleUtils.scaleDp(12)
         val MONTH_VIEW_HORIZONTAL = dpToPx(12)
         val WEEK_VIEW_HORIZONTAL = dpToPx(12)
-        val CELL_VERTICAL = ScaleUtils.scaleDp(3)
     }
 
     // Margin values

@@ -24,7 +24,7 @@ enum Constants {
   // MARK: - Font Sizes
   enum FontSize {
     static let dateLabel: CGFloat = Scale.value(16)
-    static let lunarDateLabel: CGFloat = Scale.value(7)
+    static let lunarDateLabel: CGFloat = Scale.value(9)
     static let priceLabel: CGFloat = Scale.value(10)
     static let monthHeader: CGFloat = Scale.value(17)
     static let weekLabel: CGFloat = Scale.value(12)
@@ -42,7 +42,9 @@ enum Constants {
     static let calendarHorizontalPadding: CGFloat = Scale.value(6)
     static let weekViewSidePadding: CGFloat = Scale.value(4)
     /// Khoảng cách từ lunarDate tới date
-    static let lunarDateLabelTopSpacing: CGFloat = Scale.value(2)
+    static let lunarDateLabelTopSpacing: CGFloat = Scale.value(0)
+    /// Small horizontal offset from the solar label's center.
+    static let lunarDateLabelHorizontalOffset: CGFloat = Scale.value(6)
     /// Khoảng cách từ priceLabel tới lunarDateLabel
     static let priceLabelTopSpacing: CGFloat = Scale.value(1)
     static let monthHeaderLeftPadding: CGFloat = Scale.value(8)

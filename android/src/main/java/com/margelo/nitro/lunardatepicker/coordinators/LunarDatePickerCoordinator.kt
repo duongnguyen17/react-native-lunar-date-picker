@@ -123,6 +123,9 @@ class LunarDatePickerCoordinator(
         notice = params.notice,
         onMounted = params.onMounted,
         onSelectFromDate = params.onSelectFromDate,
+        onDismissed = { dismissedFragment ->
+          if (currentFragment === dismissedFragment) currentFragment = null
+        },
         onResult = { result ->
           currentFragment = null
           params.onDone(result)

@@ -118,7 +118,11 @@ final class CalendarConfigurationManager {
     monthView.allowsMultipleSelection = true
     monthView.allowsRangedSelection = true
     monthView.rangeSelectionMode = .continuous
-    monthView.contentInsetAdjustmentBehavior = .always
+    monthView.scrollDirection = .vertical
+    // PickerController extends the calendar viewport to its edges and owns
+    // safe-area spacing inside the content and section insets.
+    monthView.contentInsetAdjustmentBehavior = .never
+    monthView.automaticallyAdjustsScrollIndicatorInsets = false
 
     return monthView
   }

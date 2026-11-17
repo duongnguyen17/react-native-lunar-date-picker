@@ -20,6 +20,7 @@ object UIConstants {
     // Corner radius
     object CornerRadius {
         const val DEFAULT = 8f
+        const val MODAL_DP = 24
     }
     
     // Day cell
@@ -64,4 +65,4 @@ object UIConstants {
         const val OVAL = android.graphics.drawable.GradientDrawable.OVAL
         const val RECTANGLE = android.graphics.drawable.GradientDrawable.RECTANGLE
     }
-} 
+}

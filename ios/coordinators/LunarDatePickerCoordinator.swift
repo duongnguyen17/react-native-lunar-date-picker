@@ -140,9 +140,10 @@ final class LunarDatePickerCoordinator {
     rangeController.onSelectFromDate = params.onSelectFromDate
     rangeController.noticeText = params.notice
 
-    rangeController.doneHandler = { [weak self] selected in
+    rangeController.doneHandler = { [weak self, weak rangeController] selected in
       guard let selected = selected,
-        let self = self
+        let self = self,
+        let rangeController = rangeController
       else { return }
 
       let timeZone = rangeController.config.calendar.timeZone
@@ -166,11 +167,21 @@ final class LunarDatePickerCoordinator {
       // Call completion BEFORE clearing callbacks
       params.onDone(result)
 
-      self.currentRangeController = nil
+      if self.currentRangeController === rangeController {
+        self.currentRangeController = nil
+      }
     }
     
-    rangeController.cancelHandler = { [weak self] in
-      self?.cleanup()
+    rangeController.cancelHandler = { [weak self, weak rangeController] in
+      guard let self = self, let rangeController = rangeController,
+        self.currentRangeController === rangeController else { return }
+      self.currentRangeController = nil
+    }
+
+    rangeController.dismissedHandler = { [weak self, weak rangeController] in
+      guard let self = self, let rangeController = rangeController,
+        self.currentRangeController === rangeController else { return }
+      self.currentRangeController = nil
     }
     rangeController.present(above: viewController)
   }

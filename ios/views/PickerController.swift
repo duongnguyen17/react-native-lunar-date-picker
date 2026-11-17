@@ -11,7 +11,7 @@ import UIKit
 
 /// Generic picker controller that handles both single date and date range selection
 /// - Parameter Value: The type of value being selected (Date or PickerRange)
-final class PickerController<Value: PickerValue>: UIViewController {
+final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePresentationControllerDelegate {
 
   // MARK: - UI Components
 
@@ -144,6 +144,13 @@ final class PickerController<Value: PickerValue>: UIViewController {
   
   /// Track previous bounds size to invalidate layout on FormSheet resize
   private var previousBoundsSize: CGSize = .zero
+  private var hasConfiguredCalendarLayout = false
+  private var isCalendarReloadInProgress = false
+  private var hasPendingCalendarReload = false
+  private var pendingCalendarScrollDate: Date?
+  private var activeCalendarScrollDate: Date?
+  private var initialCalendarScrollRequested = false
+  private var isHandlingSizeTransition = false
 
   /// Currently selected value
   private var value: Value?
@@ -189,6 +196,9 @@ final class PickerController<Value: PickerValue>: UIViewController {
   /// The block to execute when "Cancel" button will be tapped
   public var cancelHandler: (() -> Void)?
 
+  /// Called after an interactive sheet dismissal has completed.
+  internal var dismissedHandler: (() -> Void)?
+
 
   /// And initial value which will be selected by default
   public var initialValue: Value?
@@ -233,7 +243,9 @@ final class PickerController<Value: PickerValue>: UIViewController {
     self.configureSubviews()
     self.configureConstraints()
     self.configureInitialState()
-    self.setupCalendarContentInsets()
+    self.updateCalendarLayoutInsets(reloadIfChanged: false)
+    self.updateCalendarContentInsets()
+    self.hasConfiguredCalendarLayout = true
     self.setupTodayUpdateTimer()
     // Prewarm lunar cache for upcoming months to reduce first-render cost
     self.prewarmLunarCache(monthsBefore: 0, monthsAfter: 2)
@@ -241,8 +253,47 @@ final class PickerController<Value: PickerValue>: UIViewController {
 
   override public func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
+    self.navigationController?.presentationController?.delegate = self
     // Fire onMounted after calendar is fully visible & stable
     fireOnMounted()
+  }
+
+  override public func viewSafeAreaInsetsDidChange() {
+    super.viewSafeAreaInsetsDidChange()
+    guard self.hasConfiguredCalendarLayout, !self.hasCleanedUp else { return }
+
+    self.updateCalendarLayoutInsets()
+    self.updateCalendarContentInsets()
+  }
+
+  override public func viewWillTransition(
+    to size: CGSize,
+    with coordinator: UIViewControllerTransitionCoordinator
+  ) {
+    super.viewWillTransition(to: size, with: coordinator)
+    guard !self.hasCleanedUp else { return }
+
+    // The first layout has its own explicit selected-date restoration. A month
+    // captured before that scroll would override the initial selected target.
+    let restoreDate = self.needsInitialScroll
+      ? nil
+      : self.calendarView.visibleDates().monthDates.first?.date
+        ?? (self.value as? PickerRange)?.fromDate
+        ?? self.todayDate
+    self.isHandlingSizeTransition = true
+
+    coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+      guard let self = self else { return }
+      guard !self.hasCleanedUp else { return }
+      self.isHandlingSizeTransition = false
+      self.previousBoundsSize = self.calendarView.bounds.size
+      self.requestCalendarReload(scrollTo: restoreDate)
+    }
+  }
+
+  func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+    dismissedHandler?()
+    cleanup()
   }
 
   override public func viewWillDisappear(_ animated: Bool) {
@@ -289,6 +340,11 @@ final class PickerController<Value: PickerValue>: UIViewController {
     // Prevent multiple cleanup calls
     guard !hasCleanedUp else { return }
     hasCleanedUp = true
+    isCalendarReloadInProgress = false
+    hasPendingCalendarReload = false
+    pendingCalendarScrollDate = nil
+    activeCalendarScrollDate = nil
+    initialCalendarScrollRequested = false
 
     // Invalidate timers & observers early
     cleanupTodayTimer()
@@ -304,6 +360,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
     // Break closure references
     self.doneHandler = nil
     self.cancelHandler = nil
+    self.dismissedHandler = nil
     self.onMounted = nil
     self.onSelectFromDate = nil
   }
@@ -365,7 +422,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
     if !self.config.calendar.isDate(oldToday, inSameDayAs: todayDate) {
       DispatchQueue.main.async { [weak self] in
         // No need to clear lunar date cache - only affects UI styling
-        self?.calendarView.reloadData()
+        self?.requestCalendarReload()
       }
     }
   }
@@ -381,6 +438,94 @@ final class PickerController<Value: PickerValue>: UIViewController {
       name: UIApplication.didBecomeActiveNotification,
       object: nil
     )
+  }
+
+  /// Serialize JTAppleCalendar reloads and preserve the latest scroll target.
+  private func requestCalendarReload(scrollTo date: Date? = nil) {
+    guard !hasCleanedUp else { return }
+
+    hasPendingCalendarReload = true
+    if let date = date {
+      pendingCalendarScrollDate = clampedCalendarScrollDate(date)
+    }
+    guard !isCalendarReloadInProgress else { return }
+
+    startCalendarReload()
+  }
+
+  private func startCalendarReload() {
+    guard !hasCleanedUp else { return }
+    guard calendarView.bounds.width > 0, calendarView.bounds.height > 0 else {
+      isCalendarReloadInProgress = false
+      hasPendingCalendarReload = true
+      return
+    }
+
+    if let pendingCalendarScrollDate = pendingCalendarScrollDate {
+      activeCalendarScrollDate = pendingCalendarScrollDate
+      self.pendingCalendarScrollDate = nil
+    }
+    isCalendarReloadInProgress = true
+    hasPendingCalendarReload = false
+    // JTAppleCalendar's reload anchor uses the section header's x coordinate
+    // without subtracting sectionInset.left. Reload anchorless, then restore
+    // through its header-scroll API after layout has settled.
+    calendarView.reloadData(withAnchor: nil) { [weak self] in
+      guard let self else { return }
+      guard !self.hasCleanedUp else {
+        self.isCalendarReloadInProgress = false
+        self.hasPendingCalendarReload = false
+        self.pendingCalendarScrollDate = nil
+        self.activeCalendarScrollDate = nil
+        return
+      }
+      if self.hasPendingCalendarReload {
+        self.startCalendarReload()
+        return
+      }
+
+      guard let scrollDate = self.activeCalendarScrollDate else {
+        self.finishCalendarReload()
+        return
+      }
+      guard self.calendarView.cellStatus(for: scrollDate) != nil else {
+        self.finishCalendarReload()
+        return
+      }
+      self.calendarView.scrollToHeaderForDate(
+        scrollDate,
+        triggerScrollToDateDelegate: false,
+        withAnimation: false
+      ) { [weak self] in
+        self?.finishCalendarReload()
+      }
+    }
+  }
+
+  private func finishCalendarReload() {
+    guard !hasCleanedUp else { return }
+    if hasPendingCalendarReload {
+      startCalendarReload()
+      return
+    }
+
+    activeCalendarScrollDate = nil
+    isCalendarReloadInProgress = false
+    if initialCalendarScrollRequested {
+      initialCalendarScrollRequested = false
+      needsInitialScroll = false
+    }
+  }
+
+  private func clampedCalendarScrollDate(_ date: Date) -> Date {
+    var scrollDate = date
+    if let minimumDate = privateMinimumDate, scrollDate < minimumDate {
+      scrollDate = minimumDate
+    }
+    if let maximumDate = privateMaximumDate, scrollDate > maximumDate {
+      scrollDate = maximumDate
+    }
+    return scrollDate
   }
 
   /// Simple cache for lunar date calculations only
@@ -449,8 +594,8 @@ final class PickerController<Value: PickerValue>: UIViewController {
         
         self.noticeLabel.topAnchor.constraint(equalTo: self.noticeContainer.topAnchor, constant: Scale.value(8)),
         self.noticeLabel.bottomAnchor.constraint(equalTo: self.noticeContainer.bottomAnchor, constant: -Scale.value(8)),
-        self.noticeLabel.leadingAnchor.constraint(equalTo: self.noticeContainer.leadingAnchor, constant: Scale.value(16)),
-        self.noticeLabel.trailingAnchor.constraint(equalTo: self.noticeContainer.trailingAnchor, constant: -Scale.value(16)),
+        self.noticeLabel.leadingAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leadingAnchor, constant: Scale.value(16)),
+        self.noticeLabel.trailingAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.trailingAnchor, constant: -Scale.value(16)),
         
         self.weekView.topAnchor.constraint(equalTo: self.noticeContainer.bottomAnchor)
       ])
@@ -462,11 +607,11 @@ final class PickerController<Value: PickerValue>: UIViewController {
 
     constraints.append(contentsOf: [
       self.weekView.leftAnchor.constraint(
-        equalTo: self.view.leftAnchor,
+        equalTo: self.view.safeAreaLayoutGuide.leftAnchor,
         constant: Constants.Layout.weekViewSidePadding
       ),
       self.weekView.rightAnchor.constraint(
-        equalTo: self.view.rightAnchor,
+        equalTo: self.view.safeAreaLayoutGuide.rightAnchor,
         constant: -Constants.Layout.weekViewSidePadding
       ),
 
@@ -474,12 +619,10 @@ final class PickerController<Value: PickerValue>: UIViewController {
         equalTo: self.weekView.bottomAnchor
       ),
       self.calendarView.leftAnchor.constraint(
-        equalTo: self.view.leftAnchor,
-        constant: Constants.Layout.calendarHorizontalPadding
+        equalTo: self.view.leftAnchor
       ),
       self.calendarView.rightAnchor.constraint(
-        equalTo: self.view.rightAnchor,
-        constant: -Constants.Layout.calendarHorizontalPadding
+        equalTo: self.view.rightAnchor
       ),
       self.calendarView.bottomAnchor.constraint(
         equalTo: self.view.bottomAnchor
@@ -489,10 +632,47 @@ final class PickerController<Value: PickerValue>: UIViewController {
     NSLayoutConstraint.activate(constraints)
   }
 
-  private func setupCalendarContentInsets() {
-    let bottomInset: CGFloat = self.config.controller.showSubmitButton ? 20 : self.view.safeAreaInsets.bottom
-    self.calendarView.contentInset.bottom = bottomInset
-    self.calendarView.verticalScrollIndicatorInsets.bottom = bottomInset
+  private func updateCalendarContentInsets() {
+    // The collection view fills the viewport to the screen edge, so keep its
+    // terminal content clear of the home indicator inside the scroll content.
+    let bottomInset = self.view.safeAreaInsets.bottom
+      + (self.config.controller.showSubmitButton ? 20 : 0)
+    var contentInset = self.calendarView.contentInset
+    contentInset.top = 0
+    contentInset.left = 0
+    contentInset.right = 0
+    contentInset.bottom = bottomInset
+    guard self.calendarView.contentInset != contentInset else { return }
+    self.calendarView.contentInset = contentInset
+
+    var indicatorInsets = self.calendarView.verticalScrollIndicatorInsets
+    indicatorInsets.top = 0
+    indicatorInsets.left = 0
+    indicatorInsets.right = 0
+    indicatorInsets.bottom = bottomInset
+    self.calendarView.verticalScrollIndicatorInsets = indicatorInsets
+  }
+
+  private func updateCalendarLayoutInsets(reloadIfChanged: Bool = true) {
+    // Match the weekday strip's safe-area + 6pt content margins while letting
+    // the collection view itself extend edge-to-edge.
+    let horizontalInset = self.view.safeAreaInsets.left
+      + Constants.Layout.calendarHorizontalPadding
+    let sectionInset = UIEdgeInsets(
+      top: 0,
+      left: horizontalInset,
+      bottom: 0,
+      right: self.view.safeAreaInsets.right + Constants.Layout.calendarHorizontalPadding
+    )
+    guard self.calendarView.sectionInset != sectionInset else { return }
+
+    let restoreDate = self.needsInitialScroll
+      ? nil
+      : self.calendarView.visibleDates().monthDates.first?.date
+    self.calendarView.sectionInset = sectionInset
+    if reloadIfChanged {
+      self.requestCalendarReload(scrollTo: restoreDate)
+    }
   }
 
   private func configureInitialState() {
@@ -509,7 +689,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
     } else {
       setConfirmButtonEnabled(false)
     }
-    // Set flag to perform scroll in viewDidLayoutSubviews when sizes are ready
+    // Defer the initial date restoration until the calendar has laid out.
     self.needsInitialScroll = true
   }
 
@@ -659,7 +839,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
       self.value = newRange as? Value
       calendar.deselectAllDates(triggerSelectionDelegate: false)
       DispatchQueue.main.async { [weak self] in
-        calendar.reloadData()
+        self?.requestCalendarReload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
           self?.selectValue(newRange as? Value, in: calendar)
         }
@@ -706,7 +886,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
         // No need to clear cache - UI state is not cached
         // Force reload and then update value + selection
         DispatchQueue.main.async { [weak self] in
-          calendar.reloadData()
+          self?.requestCalendarReload()
           // Update value after reload to ensure UI sync
           self?.value = newRange.range as? Value
           // Small delay to ensure reload completes before selection
@@ -744,7 +924,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
       self.value = newRange as? Value
       calendar.deselectAllDates(triggerSelectionDelegate: false)
       DispatchQueue.main.async { [weak self] in
-        calendar.reloadData()
+        self?.requestCalendarReload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
           self?.selectValue(newRange as? Value, in: calendar)
         }
@@ -761,7 +941,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
       self.value = newRange as? Value
       calendar.deselectAllDates(triggerSelectionDelegate: false)
       DispatchQueue.main.async { [weak self] in
-        calendar.reloadData()
+        self?.requestCalendarReload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
           self?.selectValue(newRange as? Value, in: calendar)
         }
@@ -779,7 +959,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
       self.value = newRange as? Value
       calendar.deselectAllDates(triggerSelectionDelegate: false)
       DispatchQueue.main.async { [weak self] in
-        calendar.reloadData()
+        self?.requestCalendarReload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
           self?.selectValue(newRange as? Value, in: calendar)
         }
@@ -835,7 +1015,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
       priceMap[price.date] = price
     }
     DispatchQueue.main.async { [weak self] in
-      self?.calendarView.reloadData()
+      self?.requestCalendarReload()
     }
   }
 
@@ -843,7 +1023,7 @@ final class PickerController<Value: PickerValue>: UIViewController {
   internal func updateMaximumDate(_ newMaxDate: Date) {
     self.maximumDate = newMaxDate
     DispatchQueue.main.async { [weak self] in
-      self?.calendarView.reloadData()
+      self?.requestCalendarReload()
     }
   }
 
@@ -907,30 +1087,32 @@ final class PickerController<Value: PickerValue>: UIViewController {
     // causing JTAppleCalendar to cache overly wide columns
     if self.calendarView.bounds.size != self.previousBoundsSize {
       self.previousBoundsSize = self.calendarView.bounds.size
-      // Force layout invalidation & data reload to calculate correct sizes
-      DispatchQueue.main.async { [weak self] in
-        self?.calendarView.reloadData()
+      // During rotation, wait until UIKit applies the final bounds. The final
+      // reload then restores the visible month through the header-scroll API.
+      let initialScrollWillStart =
+        self.needsInitialScroll && !self.initialCalendarScrollRequested
+      if !self.isHandlingSizeTransition && !initialScrollWillStart {
+        let restoreDate = self.needsInitialScroll
+          ? nil
+          : self.calendarView.visibleDates().monthDates.first?.date
+        DispatchQueue.main.async { [weak self] in
+          self?.requestCalendarReload(scrollTo: restoreDate)
+        }
       }
     }
 
     // Update bottom padding so the last content isn't obscured by the home indicator
-    let desiredBottomInset: CGFloat = self.config.controller.showSubmitButton ? 20 : self.view.safeAreaInsets.bottom
-    self.calendarView.contentInset.bottom = desiredBottomInset
-    self.calendarView.verticalScrollIndicatorInsets.bottom = desiredBottomInset
+    updateCalendarContentInsets()
 
-    if needsInitialScroll {
-      needsInitialScroll = false
-      // Ensure layout is finished so contentSize is accurate for scrolling to the end
-      self.calendarView.layoutIfNeeded()
-
+    if needsInitialScroll && !initialCalendarScrollRequested {
+      initialCalendarScrollRequested = true
       if let rangeValue = self.value as? PickerRange {
-        let fromDate = rangeValue.fromDate
-        self.calendarView.scrollToHeaderForDate(fromDate)
+        self.requestCalendarReload(scrollTo: rangeValue.fromDate)
       } else {
         let nowDate = Date()
         let targetDate = self.privateMaximumDate ?? nowDate
         let scrollDate = targetDate < nowDate ? targetDate : nowDate
-        self.calendarView.scrollToHeaderForDate(scrollDate)
+        self.requestCalendarReload(scrollTo: scrollDate)
       }
     }
   }
