@@ -17,6 +17,12 @@ final class LunarPersistentCache {
   // In-memory cache for fast synchronous reads on main thread
   private var memoryCache: [String: (day: Int, month: Int)] = [:]
   private let lock = NSLock()
+  private let writeQueue = DispatchQueue(
+    label: "com.lunardatepicker.lunar-cache-writes",
+    qos: .utility
+  )
+  private let memoryCacheLimit = 1_000
+  private let memoryCacheTrimCount = 200
 
   private init() {
     NotificationCenter.default.addObserver(
@@ -52,13 +58,7 @@ final class LunarPersistentCache {
     
     lock.lock()
     memoryCache[key] = result
-    // Simple size limit to prevent memory unbounded growth
-    if memoryCache.count > 1000 {
-      let keysToRemove = memoryCache.keys.prefix(200)
-      for k in keysToRemove {
-        memoryCache.removeValue(forKey: k)
-      }
-    }
+    evictIfNeeded()
     lock.unlock()
     
     return result
@@ -67,12 +67,24 @@ final class LunarPersistentCache {
   func set(_ value: (day: Int, month: Int), for key: String) {
     lock.lock()
     memoryCache[key] = value
+    evictIfNeeded()
     lock.unlock()
     
     let str = "\(value.day)|\(value.month)"
     // Move disk I/O operation to background queue to avoid blocking main thread
-    DispatchQueue.global(qos: .background).async {
-      self.defaults.set(str, forKey: self.prefix + key)
+    let defaults = self.defaults
+    let storageKey = self.prefix + key
+    writeQueue.async {
+      defaults.set(str, forKey: storageKey)
+    }
+  }
+
+  /// Must be called while `lock` is held.
+  private func evictIfNeeded() {
+    guard memoryCache.count > memoryCacheLimit else { return }
+    let keysToRemove = Array(memoryCache.keys.prefix(memoryCacheTrimCount))
+    for key in keysToRemove {
+      memoryCache.removeValue(forKey: key)
     }
   }
 }

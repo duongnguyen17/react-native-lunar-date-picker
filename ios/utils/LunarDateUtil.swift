@@ -165,6 +165,46 @@ public func getVietnameseLunarDate(_ date: Date, _ timeZone: TimeZone)
 {
   var calendar = Calendar(identifier: .gregorian)
   calendar.timeZone = timeZone
+  let components = calendar.dateComponents([.day, .month, .year], from: date)
+  let day = components.day ?? 0
+  let month = components.month ?? 0
+  let year = components.year ?? 0
+  let dayNumber = jdFromDate(day: day, month: month, year: year)
+  let offsetSeconds = timeZone.secondsFromGMT(for: date)
+
+  // Foundation's historical Gregorian cutover does not match the arithmetic
+  // helper's Julian/Gregorian switch. Keep older dates on the exact path.
+  if (1600...2399).contains(year),
+    let cached = LunarMonthSpanCache.shared.value(
+      for: dayNumber,
+      gregorianYear: year,
+      timeZoneIdentifier: timeZone.identifier,
+      timeZoneOffsetSeconds: offsetSeconds
+    )
+  {
+    return cached
+  }
+
+  let lunarDate = getVietnameseLunarDateExact(date, timeZone)
+  if (1600...2399).contains(year) {
+    LunarMonthSpanCache.shared.recordExact(
+      lunarDate,
+      dayNumber: dayNumber,
+      gregorianYear: year,
+      timeZoneIdentifier: timeZone.identifier,
+      timeZoneOffsetSeconds: offsetSeconds
+    )
+  }
+  return lunarDate
+}
+
+/// Uncached reference implementation. Keep this arithmetic path exact so the
+/// span cache can fall back to it whenever a date is not safely inferred.
+func getVietnameseLunarDateExact(_ date: Date, _ timeZone: TimeZone)
+  -> LunarDate
+{
+  var calendar = Calendar(identifier: .gregorian)
+  calendar.timeZone = timeZone
   let comps = calendar.dateComponents([.day, .month, .year], from: date)
   let day = comps.day ?? 0
   let month = comps.month ?? 0

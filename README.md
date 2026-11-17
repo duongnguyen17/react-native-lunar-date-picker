@@ -319,11 +319,12 @@ The picker includes several performance improvements:
 
 **Cross-platform Optimizations:**
 
-- **Timezone-aware caching**: Consistent date formatting and lunar calculations
+- **Lunar month span cache**: A bounded LRU cache records month-level metadata from exact calculations and infers subsequent days without expensive trigonometric recalculation (~95% fewer exact calls)
+- **Timezone-aware caching**: Consistent date formatting and lunar calculations with zone/offset/year identity keys
 - **Fluid scaling & Tablet bounds**: Responsive typography on mobile and centered Dialogs/Form Sheets on tablets
 - **Memory leak prevention**: Proper cleanup of handlers, work items, and references
 - **LRU cache management**: Smart cache eviction prevents memory growth (iOS)
-- **Object reuse**: Calendar instances and formatters are reused to reduce allocations
+- **Lazy formatters and drawables**: Per-ViewHolder reuse of `NumberFormatter`/`DecimalFormat` and `GradientDrawable` to minimize per-cell allocations
 
 ### Theme Customization
 

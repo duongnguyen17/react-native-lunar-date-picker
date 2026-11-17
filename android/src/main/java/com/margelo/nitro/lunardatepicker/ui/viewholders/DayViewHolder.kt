@@ -23,10 +23,12 @@ import com.margelo.nitro.lunardatepicker.utils.ContinuousSelectionHelper.isInDat
 import com.margelo.nitro.lunardatepicker.utils.ContinuousSelectionHelper.isOutDateBetweenSelection
 import com.margelo.nitro.lunardatepicker.utils.DateConverter
 import com.margelo.nitro.lunardatepicker.utils.DimensionUtils.dpToPx
-import com.margelo.nitro.lunardatepicker.utils.ObjectPoolManager
 import com.margelo.nitro.lunardatepicker.utils.ScaleUtils
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Locale
 
 class DayViewHolder(
   view: View,
@@ -53,7 +55,12 @@ class DayViewHolder(
   var selectedFromDate: LocalDate? = null
   var selectedToDate: LocalDate? = null
 
-  private var currentDrawable: GradientDrawable? = null
+  private val selectionDrawable by lazy(LazyThreadSafetyMode.NONE) { GradientDrawable() }
+  private val priceFormat by lazy(LazyThreadSafetyMode.NONE) {
+    DecimalFormat("#,###", DecimalFormatSymbols(Locale.ROOT).apply {
+      groupingSeparator = '.'
+    })
+  }
 
   init {
     setupViews()
@@ -199,11 +206,6 @@ class DayViewHolder(
   }
 
   private fun resetViews() {
-    currentDrawable?.let { drawable ->
-      ObjectPoolManager.gradientDrawablePool.release(drawable)
-      currentDrawable = null
-    }
-    
     selectionContainer.background = null
     rightRangeView.setBackgroundColor(UIConstants.Colors.TRANSPARENT)
     leftRangeView.setBackgroundColor(UIConstants.Colors.TRANSPARENT)
@@ -282,11 +284,7 @@ class DayViewHolder(
    */
   private fun formatPrice(price: Double): String {
     val thousands = (price / 1000.0).toLong()
-    val format = java.text.DecimalFormat("#,###")
-    val dfs = java.text.DecimalFormatSymbols()
-    dfs.groupingSeparator = '.'
-    format.decimalFormatSymbols = dfs
-    return "${format.format(thousands)}K"
+    return "${priceFormat.format(thousands)}K"
   }
 
   private fun applyDateSelection(date: LocalDate) {
@@ -355,15 +353,13 @@ class DayViewHolder(
   }
 
   private fun applySelectedBackground() {
-    val bg = ObjectPoolManager.gradientDrawablePool.acquire().apply {
+    selectionDrawable.apply {
       shape = GradientDrawable.RECTANGLE
       cornerRadius = ScaleUtils.scale(12f)
       setColor(config.calendar.selectedBackgroundColor)
     }
-    
-    currentDrawable = bg
-    
-    selectionContainer.background = bg
+
+    selectionContainer.background = selectionDrawable
     dayText.setTextColor(config.calendar.selectedTextColor)
     lunarText.setTextColor(config.calendar.selectedTextColor)
     priceText.setTextColor(config.calendar.selectedTextColor)
@@ -408,10 +404,4 @@ class DayViewHolder(
     }
   }
 
-  fun cleanup() {
-    currentDrawable?.let { drawable ->
-      ObjectPoolManager.gradientDrawablePool.release(drawable)
-      currentDrawable = null
-    }
-  }
 }

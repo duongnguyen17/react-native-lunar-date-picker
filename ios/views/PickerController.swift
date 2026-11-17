@@ -116,6 +116,15 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
   /// Date formatter for day labels
   private var dayFormatter = DateFormatter()
 
+  /// Reused for every visible price label; creating one per cell bind is costly.
+  private lazy var priceFormatter: NumberFormatter = {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    formatter.groupingSeparator = "."
+    formatter.usesGroupingSeparator = true
+    return formatter
+  }()
+
   /// Auto submit flag (derived from config)
   private var isAutoSubmit: Bool { return !self.config.controller.showSubmitButton }
 
@@ -530,7 +539,7 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
 
   /// Simple cache for lunar date calculations only
   private func getCachedLunarDate(for date: Date) -> (day: Int, month: Int)? {
-    let key = lunarCacheKey(for: date)
+    let key = Self.lunarCacheKey(for: date, calendar: self.calendar)
     return LunarPersistentCache.shared.get(key)
   }
 
@@ -538,14 +547,14 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
     _ lunarDate: (day: Int, month: Int),
     for date: Date
   ) {
-    let key = lunarCacheKey(for: date)
+    let key = Self.lunarCacheKey(for: date, calendar: self.calendar)
     LunarPersistentCache.shared.set(lunarDate, for: key)
   }
 
-  private func lunarCacheKey(for date: Date) -> String {
+  private static func lunarCacheKey(for date: Date, calendar: Calendar) -> String {
     let start = calendar.startOfDay(for: date)
     let ts = start.timeIntervalSince1970
-    let tz = self.config.calendar.timeZone.secondsFromGMT(for: start)
+    let tz = calendar.timeZone.secondsFromGMT(for: start)
     return String(format: "%.0f.tz.%d", ts, tz)
   }
 
@@ -1030,11 +1039,7 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
 
   private func formatPrice(_ price: Double) -> String {
     let thousands = NSNumber(value: Int(round(price / 1000.0)))
-    let formatter = NumberFormatter()
-    formatter.numberStyle = .decimal
-    formatter.groupingSeparator = "."
-    formatter.usesGroupingSeparator = true
-    if let formatted = formatter.string(from: thousands) {
+    if let formatted = self.priceFormatter.string(from: thousands) {
       return "\(formatted)K"
     }
     return "\(thousands)K"
@@ -1120,15 +1125,15 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
   // MARK: - Cache Prewarm
 
   /// Pre-calculate lunar dates for a range of months and persist them to the on-disk cache.
-  /// This runs on a background queue and does not modify the in-memory cache to avoid contention.
+  /// This runs on a background queue so the first visible month is not delayed.
   private func prewarmLunarCache(monthsBefore: Int, monthsAfter: Int) {
+    guard self.config.dayCell.showLunarDate else { return }
+
     let calendar = self.config.calendar
     let timeZone = calendar.timeZone
     let now = Date()
 
-    DispatchQueue.global(qos: .utility).async { [weak self] in
-      guard let self = self else { return }
-
+    DispatchQueue.global(qos: .utility).async {
       let startOffset = -abs(monthsBefore)
       let endOffset = abs(monthsAfter)
 
@@ -1147,7 +1152,7 @@ final class PickerController<Value: PickerValue>: UIViewController, UIAdaptivePr
 
         var cursor = startOfMonth
         while cursor <= endOfMonth {
-          let key = self.lunarCacheKey(for: cursor)
+          let key = Self.lunarCacheKey(for: cursor, calendar: calendar)
           if LunarPersistentCache.shared.get(key) == nil {
             let ld = getVietnameseLunarDate(cursor, timeZone)
             LunarPersistentCache.shared.set((ld.day, ld.month), for: key)

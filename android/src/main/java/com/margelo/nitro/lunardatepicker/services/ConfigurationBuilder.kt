@@ -1,33 +1,17 @@
 package com.margelo.nitro.lunardatepicker.services
 
-import com.margelo.nitro.lunardatepicker.*
-import com.margelo.nitro.lunardatepicker.models.*
-import com.margelo.nitro.lunardatepicker.utils.*
-import com.margelo.nitro.lunardatepicker.constants.DataConstants
-import android.util.Log
-
-import java.util.*
+import com.margelo.nitro.lunardatepicker.LDP_ConfigParams
+import com.margelo.nitro.lunardatepicker.LDP_CustomLanguage
+import com.margelo.nitro.lunardatepicker.LDP_CustomStyle
+import com.margelo.nitro.lunardatepicker.LDP_Mode
+import com.margelo.nitro.lunardatepicker.LDP_PresentParams
+import com.margelo.nitro.lunardatepicker.models.PickerConfig
+import com.margelo.nitro.lunardatepicker.utils.ColorUtils
+import java.util.Locale
 
 class ConfigurationBuilder {
 
-  companion object {
-    private const val TAG = DataConstants.LogTags.CONFIG_BUILDER
-  }
-
-  private val cacheService: ConfigurationCacheService by lazy {
-    ConfigurationCacheService()
-  }
-
   fun buildPickerConfig(params: LDP_PresentParams, globalConfig: LDP_ConfigParams?): PickerConfig {
-    return try {
-      cacheService.getOrBuildConfiguration(params, globalConfig)
-    } catch (e: Exception) {
-      Log.e(TAG, "Failed to build configuration using cache service, falling back to manual build", e)
-      buildConfigurationManually(params, globalConfig)
-    }
-  }
-
-  private fun buildConfigurationManually(params: LDP_PresentParams, globalConfig: LDP_ConfigParams?): PickerConfig {
     var pickerConfig = PickerConfig.default.copy()
 
     pickerConfig = pickerConfig.copy(

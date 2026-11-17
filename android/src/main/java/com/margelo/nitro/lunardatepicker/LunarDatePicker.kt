@@ -6,9 +6,7 @@ import com.facebook.proguard.annotations.DoNotStrip
 import com.margelo.nitro.lunardatepicker.constants.DataConstants
 import com.margelo.nitro.lunardatepicker.coordinators.LunarDatePickerCoordinator
 import com.margelo.nitro.lunardatepicker.exceptions.LunarDatePickerException
-import com.margelo.nitro.lunardatepicker.services.ConfigurationCacheService
 import com.margelo.nitro.lunardatepicker.utils.DateConverter
-import com.margelo.nitro.lunardatepicker.utils.MemoryOptimizer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,9 +26,6 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
   private val dateConverter: DateConverter by lazy {
     DateConverter()
   }
-  private val configurationCacheService: ConfigurationCacheService by lazy {
-    ConfigurationCacheService()
-  }
 
   // MARK: - HybridLunarDatePickerSpec Implementation
 
@@ -44,9 +39,6 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
 
       // Apply configuration to coordinator
       coordinator.configure(config)
-
-      // Initialize performance optimizations
-      initializePerformanceOptimizations()
 
       Log.d(TAG, "Configuration applied successfully")
     } catch (e: Exception) {
@@ -103,26 +95,6 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
 
 
   // MARK: - Private Methods
-
-  /**
-   * Initializes performance optimizations including object pooling and caching
-   */
-  private fun initializePerformanceOptimizations() {
-    try {
-      // Preload object pools for better memory management
-      MemoryOptimizer.preloadObjectPools()
-
-      val configuredTimeZone = coordinator.getConfiguredTimeZone()
-
-      // Preload lunar date cache for faster calculations
-      MemoryOptimizer.preloadLunarDateCache(dateConverter, configuredTimeZone)
-
-      Log.d(TAG, "Performance optimizations initialized")
-    } catch (e: Exception) {
-      Log.w(TAG, "Failed to initialize performance optimizations", e)
-      // Continue without optimizations - don't fail configuration
-    }
-  }
 
   /**
    * Validates the presentation parameters

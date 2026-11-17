@@ -107,6 +107,8 @@ class LunarDatePickerFragment : DialogFragment() {
     private var maximumDate: LocalDate? = null
     private var initialValue: LDP_Range? = null
     private var selection = DateSelection()
+    private var firstCalendarMonth: YearMonth? = null
+    private var lastCalendarMonth: YearMonth? = null
     private val timeZone: ZoneId by lazy { config.calendar.timeZone.toZoneId() }
     
     // Price data: key = "DD/MM/YYYY"
@@ -469,6 +471,8 @@ class LunarDatePickerFragment : DialogFragment() {
             ?: YearMonth.from(currentDate.minusYears(config.yearRangeOffset.toLong()))
         val endMonth = maximumDate?.let { YearMonth.from(it) }
             ?: YearMonth.from(currentDate.plusYears(config.yearRangeOffset.toLong()))
+        firstCalendarMonth = startMonth
+        lastCalendarMonth = endMonth
 
         // Match the weekdayNames array, which is ordered Monday through Sunday.
         calendarView.setup(startMonth, endMonth, DayOfWeek.MONDAY)
@@ -506,12 +510,17 @@ class LunarDatePickerFragment : DialogFragment() {
     }
 
     private fun handleDateSelection(date: LocalDate) {
+        val previousSelection = selection
         if (!config.controller.showSubmitButton) {
-            if (handleAutoSubmit(date)) return
+            if (handleAutoSubmit(date)) {
+                refreshSelectionMonths(previousSelection, selection)
+                return
+            }
         }
 
         if (config.controller.isSingleMode) {
             handleSingleSelection(date)
+            refreshSelectionMonths(previousSelection, selection)
             return
         }
 
@@ -530,7 +539,7 @@ class LunarDatePickerFragment : DialogFragment() {
             fireOnSelectFromDate(date)
         }
 
-        calendarView?.notifyCalendarChanged()
+        refreshSelectionMonths(previousSelection, selection)
     }
 
     // region Helpers
@@ -538,7 +547,6 @@ class LunarDatePickerFragment : DialogFragment() {
     private fun handleSingleSelection(date: LocalDate) {
         selection = DateSelection(startDate = date, endDate = null)
         if (config.controller.showSubmitButton) setConfirmButtonEnabled(true)
-        calendarView?.notifyCalendarChanged()
     }
 
     private fun handleAutoSubmit(date: LocalDate): Boolean {
@@ -554,19 +562,16 @@ class LunarDatePickerFragment : DialogFragment() {
         return when {
             currentFrom == null || currentTo != null -> {
                 selection = DateSelection(startDate = date, endDate = null)
-                calendarView?.notifyCalendarChanged()
                 fireOnSelectFromDate(date)
                 true
             }
             date.isBefore(currentFrom) -> {
                 selection = DateSelection(startDate = date, endDate = null)
-                calendarView?.notifyCalendarChanged()
                 fireOnSelectFromDate(date)
                 true
             }
             else -> {
                 selection = DateSelection(startDate = currentFrom, endDate = date)
-                calendarView?.notifyCalendarChanged()
                 onResultCallback?.invoke(LDP_Range(from = dateConverter.stringFromDate(currentFrom, timeZone), to = dateConverter.stringFromDate(date, timeZone)))
                 dismiss()
                 true
@@ -664,9 +669,23 @@ class LunarDatePickerFragment : DialogFragment() {
     }
 
     private fun prewarmLunarCache() {
+        if (!config.calendar.showLunarDate) return
+
+        val selectedStart = selection.startDate
+        val targetDate = selectedStart ?: LocalDate.now(timeZone).let { today ->
+            when {
+                minimumDate != null && today.isBefore(minimumDate) -> minimumDate!!
+                maximumDate != null && today.isAfter(maximumDate) -> maximumDate!!
+                else -> today
+            }
+        }
+        var startDate = YearMonth.from(targetDate).atDay(1)
+        var endDate = YearMonth.from(startDate).plusMonths(2).atEndOfMonth()
+        minimumDate?.let { startDate = maxOf(startDate, it) }
+        maximumDate?.let { endDate = minOf(endDate, it) }
+        if (endDate.isBefore(startDate)) return
+
         lifecycleScope.launch(Dispatchers.IO) {
-            val startDate = LocalDate.now()
-            val endDate = startDate.plusMonths(3)
             dateConverter.preloadLunarDateCache(startDate, endDate, timeZone)
         }
     }
@@ -707,8 +726,45 @@ class LunarDatePickerFragment : DialogFragment() {
      * Có thể gọi khi calendar đang hiển thị.
      */
     fun updatePrices(newPrices: Map<String, LDP_PriceData>) {
+        val previousPrices = pricesMap
         pricesMap = newPrices
-        calendarView?.notifyCalendarChanged()
+        refreshPriceMonths(previousPrices, newPrices)
+    }
+
+    private fun refreshSelectionMonths(previous: DateSelection, current: DateSelection) {
+        val firstMonth = firstCalendarMonth ?: run {
+            calendarView?.notifyCalendarChanged()
+            return
+        }
+        val lastMonth = lastCalendarMonth ?: run {
+            calendarView?.notifyCalendarChanged()
+            return
+        }
+        refreshMonths(CalendarInvalidation.selectionMonths(previous, current, firstMonth, lastMonth))
+    }
+
+    private fun refreshPriceMonths(
+        previous: Map<String, LDP_PriceData>?,
+        current: Map<String, LDP_PriceData>?
+    ) {
+        val firstMonth = firstCalendarMonth ?: run {
+            calendarView?.notifyCalendarChanged()
+            return
+        }
+        val lastMonth = lastCalendarMonth ?: run {
+            calendarView?.notifyCalendarChanged()
+            return
+        }
+        refreshMonths(CalendarInvalidation.priceMonths(previous, current, firstMonth, lastMonth))
+    }
+
+    private fun refreshMonths(months: Set<YearMonth>?) {
+        val calendar = calendarView ?: return
+        if (months == null) {
+            calendar.notifyCalendarChanged()
+            return
+        }
+        months.forEach(calendar::notifyMonthChanged)
     }
 
     /**

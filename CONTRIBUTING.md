@@ -98,6 +98,17 @@ yarn test
 
 ### Native regression checks
 
+On macOS, run the iOS lunar-cache checks from the repository root:
+
+```sh
+bash scripts/test-ios-lunar-cache.sh
+```
+
+This uses a minimal UIKit notification stub and checks bounded cache growth,
+concurrent reads and writes, persistence after clearing memory, and cache
+clearing on a simulated memory warning. It does not test UIKit notification
+delivery.
+
 Run the Android safe-inset unit tests from `example/android` after setting up
 the example dependencies and generating Nitro code:
 
