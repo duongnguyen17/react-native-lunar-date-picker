@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-17
+
+### Fixed
+
+- **iOS**: Use the picker's configured calendar and timezone for day labels and minimum/maximum date bounds, preventing incorrect dates when the device timezone differs.
+- **iOS**: Raise lunar-date and price labels slightly so they fit within the rounded selected-day background.
+
+### Changed
+
+- **iOS**: Refresh only dates whose price or cheapest-price styling changed when `updatePrices` replaces the price snapshot. Price updates are applied on the main thread and deferred until the calendar is ready when necessary.
+
+### Added
+
+- **iOS**: Added a regression script covering price additions, changes, removals, and unchanged snapshots.
+
 ## [1.3.0] - 2026-11-17
 
 ### Added
