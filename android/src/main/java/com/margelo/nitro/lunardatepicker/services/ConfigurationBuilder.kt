@@ -77,7 +77,8 @@ class ConfigurationBuilder {
         selectedTextColor = ColorUtils.colorFromHex(theme.selectedTextColor)
       ),
       monthHeader = config.monthHeader.copy(
-        labelColor = ColorUtils.colorFromHex(theme.monthLabelColor)
+        labelColor = ColorUtils.colorFromHex(theme.monthLabelColor),
+        monthLabelColor = ColorUtils.colorFromHex(theme.monthLabelColor)
       ),
       weekView = config.weekView.copy(
         backgroundColor = ColorUtils.colorFromHex(theme.weekViewBackgroundColor),
