@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-19
+
+### Fixed
+
+- **Android**: Apply the configured month title color so it follows the selected theme, including dark mode.
+
 ## [1.3.1] - 2026-11-17
 
 ### Fixed
