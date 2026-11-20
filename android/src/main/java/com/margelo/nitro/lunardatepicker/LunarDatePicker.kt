@@ -6,7 +6,9 @@ import com.facebook.proguard.annotations.DoNotStrip
 import com.margelo.nitro.lunardatepicker.constants.DataConstants
 import com.margelo.nitro.lunardatepicker.coordinators.LunarDatePickerCoordinator
 import com.margelo.nitro.lunardatepicker.exceptions.LunarDatePickerException
+import com.margelo.nitro.lunardatepicker.services.PickerTimeZoneResolver
 import com.margelo.nitro.lunardatepicker.utils.DateConverter
+import java.time.LocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,6 +28,7 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
   private val dateConverter: DateConverter by lazy {
     DateConverter()
   }
+  private var currentConfig: LDP_ConfigParams? = null
 
   // MARK: - HybridLunarDatePickerSpec Implementation
 
@@ -35,10 +38,9 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
    */
   override fun configure(config: LDP_ConfigParams) {
     try {
-      
-
       // Apply configuration to coordinator
       coordinator.configure(config)
+      currentConfig = config
 
       Log.d(TAG, "Configuration applied successfully")
     } catch (e: Exception) {
@@ -90,6 +92,62 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
       Log.d(TAG, "Maximum date updated successfully")
     } catch (e: Exception) {
       Log.w(TAG, "Failed to update maximum date: ${e.message}", e)
+    }
+  }
+
+  /**
+   * Lấy thông tin ngày âm lịch cho một ngày dương lịch
+   */
+  override fun getLunarDate(solarDate: String, timeZoneOffset: Double?): LDP_LunarDate {
+    val offset = timeZoneOffset ?: currentConfig?.timeZoneOffset ?: 7.0
+    val timeZone = PickerTimeZoneResolver.resolve(offset).toZoneId()
+    val localDate = parseSolarDate(solarDate)
+      ?: throw LunarDatePickerException.InvalidConfiguration("Invalid date format: $solarDate")
+
+    val lunar = dateConverter.getVietnameseLunarDate(localDate, timeZone)
+    val isoDate = String.format("%04d-%02d-%02d", localDate.year, localDate.monthValue, localDate.dayOfMonth)
+    return LDP_LunarDate(lunar.day.toDouble(), lunar.month.toDouble(), lunar.year.toDouble(), isoDate)
+  }
+
+  /**
+   * Lấy danh sách ngày âm lịch cho toàn bộ một tháng dương lịch
+   */
+  override fun getLunarMonth(year: Double, month: Double, timeZoneOffset: Double?): Array<LDP_LunarDate> {
+    val offset = timeZoneOffset ?: currentConfig?.timeZoneOffset ?: 7.0
+    val timeZone = PickerTimeZoneResolver.resolve(offset).toZoneId()
+    val y = year.toInt()
+    val m = month.toInt()
+    if (m < 1 || m > 12) {
+      throw LunarDatePickerException.InvalidConfiguration("Invalid month: $month")
+    }
+
+    val firstDay = LocalDate.of(y, m, 1)
+    val daysInMonth = firstDay.lengthOfMonth()
+    val list = ArrayList<LDP_LunarDate>(daysInMonth)
+
+    for (d in 1..daysInMonth) {
+      val date = LocalDate.of(y, m, d)
+      val lunar = dateConverter.getVietnameseLunarDate(date, timeZone)
+      val isoDate = String.format("%04d-%02d-%02d", y, m, d)
+      list.add(LDP_LunarDate(lunar.day.toDouble(), lunar.month.toDouble(), lunar.year.toDouble(), isoDate))
+    }
+
+    return list.toTypedArray()
+  }
+
+  private fun parseSolarDate(dateString: String): LocalDate? {
+    return try {
+      if (dateString.contains("-")) {
+        val parts = dateString.split("-").map { it.toInt() }
+        if (parts.size == 3) LocalDate.of(parts[0], parts[1], parts[2]) else null
+      } else if (dateString.contains("/")) {
+        val parts = dateString.split("/").map { it.toInt() }
+        if (parts.size == 3) LocalDate.of(parts[2], parts[1], parts[0]) else null
+      } else {
+        null
+      }
+    } catch (e: Exception) {
+      null
     }
   }
 

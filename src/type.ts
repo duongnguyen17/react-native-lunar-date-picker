@@ -3,6 +3,13 @@ export interface LDP_Range {
   to?: string; // DD/MM/YYYY
 }
 
+export interface LDP_LunarDate {
+  day: number;
+  month: number;
+  year: number;
+  solarDate: string; // YYYY-MM-DD
+}
+
 export type LDP_Mode = 'single' | 'range';
 
 export type LDP_PriceData = {

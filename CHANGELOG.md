@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **JS & Native**: Exported standalone `getLunarDate(date, timeZoneOffset = 7)` and `getLunarMonth(year, month, timeZoneOffset = 7)` functions accessible via synchronous Nitro JSI calls, enabling high-performance lunar date lookups in custom React Native calendar components without presenting the native picker UI. Mặc định `timeZoneOffset = 7` (chuẩn UTC+7 cho Âm lịch Việt Nam).
+- **iOS & Android**: Native implementations for standalone lunar calculation using pre-existing `LunarMonthSpanCache` and exact trigonometric oracles with default fallback to UTC+7.
+- **Example**: Added interactive standalone lunar API test section in `example/src/screens/HomeScreen.tsx` demonstrating single-day conversion and full-month batch conversion with execution timing.
+
 ## [1.3.2] - 2026-11-19
 
 ### Fixed

@@ -79,8 +79,93 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
     coordinator.updateMaximumDate(maximumDate)
   }
 
+  /// Lấy thông tin ngày âm lịch cho một ngày dương lịch
+  public func getLunarDate(solarDate: String, timeZoneOffset: Double?) throws -> LDP_LunarDate {
+    let timeZone = PickerTimeZoneResolver.resolve(offsetHours: timeZoneOffset ?? currentConfig?.timeZoneOffset ?? 7.0)
+    guard let (day, month, year, date) = parseSolarDate(solarDate, timeZone: timeZone) else {
+      throw LunarDatePickerError.invalidConfiguration
+    }
+    let lunar = getVietnameseLunarDate(date, timeZone)
+    let isoDate = String(format: "%04d-%02d-%02d", year, month, day)
+    return LDP_LunarDate(day: Double(lunar.day), month: Double(lunar.month), year: Double(lunar.year), solarDate: isoDate)
+  }
+
+  /// Lấy danh sách ngày âm lịch cho toàn bộ một tháng dương lịch
+  public func getLunarMonth(year: Double, month: Double, timeZoneOffset: Double?) throws -> [LDP_LunarDate] {
+    let timeZone = PickerTimeZoneResolver.resolve(offsetHours: timeZoneOffset ?? currentConfig?.timeZoneOffset ?? 7.0)
+    let y = Int(year)
+    let m = Int(month)
+    guard m >= 1 && m <= 12 else {
+      throw LunarDatePickerError.invalidConfiguration
+    }
+
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = timeZone
+
+    var startComponents = DateComponents()
+    startComponents.year = y
+    startComponents.month = m
+    startComponents.day = 1
+    guard let startDate = calendar.date(from: startComponents),
+          let range = calendar.range(of: .day, in: .month, for: startDate) else {
+      throw LunarDatePickerError.invalidConfiguration
+    }
+
+    var result: [LDP_LunarDate] = []
+    result.reserveCapacity(range.count)
+
+    for d in range {
+      var dayComponents = DateComponents()
+      dayComponents.year = y
+      dayComponents.month = m
+      dayComponents.day = d
+      if let dayDate = calendar.date(from: dayComponents) {
+        let lunar = getVietnameseLunarDate(dayDate, timeZone)
+        let isoDate = String(format: "%04d-%02d-%02d", y, m, d)
+        result.append(LDP_LunarDate(day: Double(lunar.day), month: Double(lunar.month), year: Double(lunar.year), solarDate: isoDate))
+      }
+    }
+
+    return result
+  }
 
   // MARK: - Private Methods
+
+  private func parseSolarDate(_ dateString: String, timeZone: TimeZone) -> (day: Int, month: Int, year: Int, date: Date)? {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = timeZone
+
+    if dateString.contains("-") {
+      let parts = dateString.split(separator: "-").compactMap { Int($0) }
+      if parts.count == 3 {
+        let year = parts[0]
+        let month = parts[1]
+        let day = parts[2]
+        var comps = DateComponents()
+        comps.year = year
+        comps.month = month
+        comps.day = day
+        if let date = calendar.date(from: comps) {
+          return (day, month, year, date)
+        }
+      }
+    } else if dateString.contains("/") {
+      let parts = dateString.split(separator: "/").compactMap { Int($0) }
+      if parts.count == 3 {
+        let day = parts[0]
+        let month = parts[1]
+        let year = parts[2]
+        var comps = DateComponents()
+        comps.year = year
+        comps.month = month
+        comps.day = day
+        if let date = calendar.date(from: comps) {
+          return (day, month, year, date)
+        }
+      }
+    }
+    return nil
+  }
 
   /// Validates the configuration parameters
   /// - Parameter config: Configuration to validate

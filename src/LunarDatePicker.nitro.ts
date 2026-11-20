@@ -1,6 +1,7 @@
 import type { HybridObject } from 'react-native-nitro-modules';
 import type {
   LDP_ConfigParams,
+  LDP_LunarDate,
   LDP_PresentParams,
   LDP_PriceUpdateParams,
 } from './type';
@@ -14,4 +15,12 @@ export interface LunarDatePicker
   updatePrices(params: LDP_PriceUpdateParams): void;
 
   updateMaximumDate(maximumDate: string): void;
+
+  getLunarDate(solarDate: string, timeZoneOffset?: number): LDP_LunarDate;
+
+  getLunarMonth(
+    year: number,
+    month: number,
+    timeZoneOffset?: number
+  ): LDP_LunarDate[];
 }

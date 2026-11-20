@@ -1,6 +1,8 @@
 import type { LDP_Range } from '@2security/lunar-date-picker';
 import {
   configure,
+  getLunarDate,
+  getLunarMonth,
   pickDate,
   updateMaximumDate,
   updatePrices,
@@ -89,6 +91,42 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
   const toggleLunarDate = useCallback(() => {
     setShowLunarDate((prev) => !prev);
   }, []);
+
+  const [standaloneLunarInfo, setStandaloneLunarInfo] = useState<string | null>(
+    null
+  );
+
+  const handleTestLunarDate = useCallback(() => {
+    try {
+      const today = new Date();
+      const lunar = getLunarDate(today, selectedTimeZoneOffset);
+      const info = `☀️ Dương lịch: ${lunar.solarDate}\n🌙 Âm lịch: Ngày ${lunar.day} tháng ${lunar.month} năm ${lunar.year}`;
+      setStandaloneLunarInfo(info);
+      Alert.alert('Standalone getLunarDate()', info);
+    } catch (e: any) {
+      Alert.alert('Lỗi tính ngày âm', e?.message ?? String(e));
+    }
+  }, [selectedTimeZoneOffset]);
+
+  const handleTestLunarMonth = useCallback(() => {
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const start = Date.now();
+      const monthDates = getLunarMonth(year, month, selectedTimeZoneOffset);
+      const duration = (Date.now() - start).toFixed(2);
+      const sample = monthDates
+        .slice(0, 5)
+        .map((d) => `• ${d.solarDate} → ${d.day}/${d.month}`)
+        .join('\n');
+      const info = `Đã tính ${monthDates.length} ngày của tháng ${month}/${year} trong ${duration}ms!\n\nVí dụ 5 ngày đầu:\n${sample}`;
+      setStandaloneLunarInfo(info);
+      Alert.alert(`Standalone getLunarMonth(${year}, ${month})`, info);
+    } catch (e: any) {
+      Alert.alert('Lỗi tính tháng âm', e?.message ?? String(e));
+    }
+  }, [selectedTimeZoneOffset]);
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -382,9 +420,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
             style={styles.themeButton}
             onPress={toggleLunarDate}
           >
-            <Text style={{ fontSize: 12, fontWeight: 'bold' }}>
-              {showLunarDate ? '🌕' : '🌑'}
-            </Text>
+            <Text style={styles.lunarIcon}>{showLunarDate ? '🌕' : '🌑'}</Text>
           </TouchableOpacity>
           <Text style={[styles.title, { color: textColor }]}>
             Lunar Date Picker
@@ -547,6 +583,56 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           <Text style={styles.buttonText}>📌 Chọn 1 ngày</Text>
           <Text style={styles.buttonSubtext}>Chế độ single date</Text>
         </TouchableOpacity>
+
+        {/* Section: Standalone Lunar Calculation */}
+        <Text style={[styles.sectionTitle, { color: textColor }]}>
+          Standalone Lunar APIs (Exported)
+        </Text>
+
+        <TouchableOpacity
+          style={[styles.button, styles.buttonIndigo]}
+          onPress={handleTestLunarDate}
+        >
+          <Text style={styles.buttonText}>🌙 Test getLunarDate(today)</Text>
+          <Text style={styles.buttonSubtext}>
+            Tính ngày âm lịch trực tiếp qua JSI (không cần mở picker)
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.buttonTeal]}
+          onPress={handleTestLunarMonth}
+        >
+          <Text style={styles.buttonText}>
+            🗓 Test getLunarMonth(currentMonth)
+          </Text>
+          <Text style={styles.buttonSubtext}>
+            Tính cả tháng (30 ngày) siêu tốc với LunarMonthSpanCache
+          </Text>
+        </TouchableOpacity>
+
+        {standaloneLunarInfo && (
+          <View
+            style={[
+              styles.card,
+              styles.resultCard,
+              { backgroundColor: cardBg },
+            ]}
+          >
+            <Text style={[styles.cardLabel, { color: textColor + '99' }]}>
+              Kết quả tính toán độc lập
+            </Text>
+            <Text
+              style={[
+                styles.result,
+                styles.resultTextSmall,
+                { color: textColor },
+              ]}
+            >
+              {standaloneLunarInfo}
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -643,6 +729,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  resultCard: {
+    marginTop: 8,
+  },
+  resultTextSmall: {
+    fontSize: 13,
+  },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -689,6 +781,13 @@ const styles = StyleSheet.create({
   },
   buttonOrange: {
     backgroundColor: '#ea580c',
+  },
+  lunarIcon: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  buttonIndigo: {
+    backgroundColor: '#4F46E5',
   },
   buttonTeal: {
     backgroundColor: '#0d9488',
