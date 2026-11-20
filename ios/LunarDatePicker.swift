@@ -52,18 +52,21 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
   /// - Parameter params: Presentation parameters including theme, language, etc.
   /// - Throws: An error if presentation fails
   public func present(params: LDP_PresentParams) throws {
-    // Ensure we're on the main thread for UI operations
+    // Validate presentation parameters immediately so errors throw to JS
+    try validatePresentationParams(params)
+
+    // Ensure presentation runs on main thread
     guard Thread.isMainThread else {
       DispatchQueue.main.async { [weak self] in
-        try? self?.present(params: params)
+        do {
+          try self?.coordinator.present(with: params)
+        } catch {
+          print("[LunarDatePicker] Present failed: \(error)")
+        }
       }
       return
     }
 
-    // Validate presentation parameters
-    try validatePresentationParams(params)
-
-    // Present using coordinator
     try coordinator.present(with: params)
   }
 
@@ -76,7 +79,9 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
 
   /// Cập nhật maximumDate khi calendar đang mở
   public func updateMaximumDate(maximumDate: String) throws {
-    coordinator.updateMaximumDate(maximumDate)
+    DispatchQueue.main.async { [weak self] in
+      self?.coordinator.updateMaximumDate(maximumDate)
+    }
   }
 
   /// Lấy thông tin ngày âm lịch cho một ngày dương lịch
@@ -146,7 +151,10 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
         comps.month = month
         comps.day = day
         if let date = calendar.date(from: comps) {
-          return (day, month, year, date)
+          let created = calendar.dateComponents([.year, .month, .day], from: date)
+          if created.year == year && created.month == month && created.day == day {
+            return (day, month, year, date)
+          }
         }
       }
     } else if dateString.contains("/") {
@@ -160,7 +168,10 @@ final class LunarDatePicker: HybridLunarDatePickerSpec {
         comps.month = month
         comps.day = day
         if let date = calendar.date(from: comps) {
-          return (day, month, year, date)
+          let created = calendar.dateComponents([.year, .month, .day], from: date)
+          if created.year == year && created.month == month && created.day == day {
+            return (day, month, year, date)
+          }
         }
       }
     }

@@ -59,4 +59,35 @@ describe('LunarDatePicker Public APIs', () => {
     expect(mockHybrid.getLunarMonth).toHaveBeenCalledWith(2026, 11, 7);
     expect(res.length).toBe(2);
   });
+
+  it('getLunarDate handles leap year date correctly', () => {
+    const mockHybrid = NitroModules.createHybridObject(
+      'LunarDatePicker'
+    ) as unknown as { getLunarDate: jest.Mock };
+    const leapDate = new Date(2024, 1, 29); // 2024-02-29
+    getLunarDate(leapDate);
+
+    expect(mockHybrid.getLunarDate).toHaveBeenCalledWith('2024-02-29', 7);
+  });
+
+  it('getLunarDate respects custom timeZoneOffset override', () => {
+    const mockHybrid = NitroModules.createHybridObject(
+      'LunarDatePicker'
+    ) as unknown as { getLunarDate: jest.Mock };
+    getLunarDate('2026-01-01', 9);
+
+    expect(mockHybrid.getLunarDate).toHaveBeenCalledWith('2026-01-01', 9);
+  });
+
+  it('getLunarMonth queries boundary months (Jan and Dec)', () => {
+    const mockHybrid = NitroModules.createHybridObject(
+      'LunarDatePicker'
+    ) as unknown as { getLunarMonth: jest.Mock };
+
+    getLunarMonth(2026, 1, 7);
+    expect(mockHybrid.getLunarMonth).toHaveBeenCalledWith(2026, 1, 7);
+
+    getLunarMonth(2026, 12, 7);
+    expect(mockHybrid.getLunarMonth).toHaveBeenCalledWith(2026, 12, 7);
+  });
 });

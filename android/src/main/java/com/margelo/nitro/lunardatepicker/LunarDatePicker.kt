@@ -178,8 +178,8 @@ class LunarDatePicker : HybridLunarDatePickerSpec() {
         throw LunarDatePickerException.InvalidConfiguration("Invalid maximum date format. Expected DD/MM/YYYY")
       }
 
-      if (minimumDate >= maximumDate) {
-        throw LunarDatePickerException.InvalidConfiguration("Minimum date must be less than maximum date")
+      if (minimumDate > maximumDate) {
+        throw LunarDatePickerException.InvalidConfiguration("Minimum date must be less than or equal to maximum date")
       }
     }
 
