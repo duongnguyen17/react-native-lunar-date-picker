@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-11-20
+
+### Fixed
+
+- **Android**: Allow `minimumDate` to equal `maximumDate` without throwing a validation error.
+- **iOS**: Validate presentation parameters synchronously before dispatching to the main thread so errors throw immediately to JavaScript.
+- **iOS**: Dispatch `updateMaximumDate` to the main thread to ensure thread safety when modifying active calendar bounds.
+- **iOS**: Enforce strict calendar date parsing by verifying created date components match input, preventing invalid date roll-overs (e.g. February 31).
+
+### Added
+
+- **Tests**: Added unit tests for standalone lunar date lookup APIs covering leap-year dates, custom timezone offset overrides, and boundary month queries (January and December).
+
+## [1.3.3] - 2026-11-20
+
 ### Added
 
 - **JS, iOS & Android**: Added synchronous `getLunarDate(date, timeZoneOffset = 7)` and `getLunarMonth(year, month, timeZoneOffset = 7)` APIs for lunar date lookups without presenting the picker. `getLunarDate` accepts a `Date` or a `YYYY-MM-DD` / `DD/MM/YYYY` string; both APIs return solar and lunar date fields. The default timezone offset is UTC+7.
@@ -189,7 +204,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.3.4...HEAD
+[1.3.4]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.3.3...v1.3.4
+[1.3.3]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.3.2...v1.3.3
+[1.3.2]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.2.2...v1.3.0
+[1.2.2]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.3...v1.2.0
 [1.1.3]: https://github.com/duongnguyen17/react-native-lunar-date-picker/compare/v1.1.2...v1.1.3
